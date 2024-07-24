@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>Community detection on geometric graphs</title>
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<link rel="stylesheet" href="../dist/reveal.css">
+		<link rel="stylesheet" href="../dist/theme/night.css" id="theme">
+		<link rel="stylesheet" href="../dist/addons/envs.css" id="envs">
+		<style type="text/css" media="screen">
+			.slides section.has-dark-background,
+			.slides section.has-dark-background h2 {
+				color: #fff;
+			}
+			.slides section.has-light-background,
+			.slides section.has-light-background h2 {
+				color: #222;
+			}
+		</style>
+	</head>
+
+    <body>
+
+		<div class="reveal">
+
+			<div class="slides">
+
+				<section>
+					<h3  style="margin-top: 2cm;">Community detection on geometric graphs</h3>
+					<p id = "subheading"> A local-to-global perspective</p>
+					<h4 id="yellow_heading"  style="margin-top: 3cm;">B. R. Vinay Kumar</h4>
+					<p id="small" style="margin-top: 3cm;">Indian Institute of Technology-Bombay<br>August 19, 2024<br>Mumbai, India</psmall>
+				</section>
+				
+				<section >
+					<h3>Geometric graphs</h3>
+
+					<iframe srcdoc="<html>Graph</html>"></iframe>
+				</section>
+
+				<section>
+					<h3>The Lorenz Equations</h3>
+
+					\[\begin{aligned}
+					\dot{x} &amp; = \sigma(y-x) \\
+					\dot{y} &amp; = \rho x - y - xz \\
+					\dot{z} &amp; = -\beta z + xy
+					\end{aligned} \]
+				</section>
+            </div>
+
+		</div>
+
+		<script src="../dist/reveal.js"></script>
+		<script src="../plugin/math/math.js"></script>
+		<script>
+			Reveal.initialize({
+				history: true,
+				transition: 'linear',
+
+				mathjax2: {
+					config: 'TeX-AMS_HTML-full',
+					TeX: {
+						Macros: {
+							R: '\\mathbb{R}',
+							set: [ '\\left\\{#1 \\; ; \\; #2\\right\\}', 2 ]
+						}
+					}
+				},
+
+				// There are three typesetters available
+				// RevealMath.MathJax2 (default)
+				// RevealMath.MathJax3
+				// RevealMath.KaTeX
+				//
+				// More info at https://revealjs.com/math/
+				plugins: [ RevealMath.MathJax2 ]
+			});
+		</script>
+		<script>
+			const myHeading = document.getElementById("yellow_heading");
+			myHeading.style.color = "#e7ad52";
+		</script>
+
+	</body>
+</html>
