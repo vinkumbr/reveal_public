@@ -8,3 +8,8 @@
 p#subheading {
     font-size:30px;
     }
+
+#chartdiv {
+        width: 100%;
+        height: 600px;
+      }

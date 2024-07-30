@@ -21,6 +21,19 @@
 				color: #222;
 			}
 		</style>
+		<style>
+			.container{
+				display: flex;
+			}
+			.col{
+				flex: 1;
+			}
+			</style>
+			<style>
+				canvas {
+					border: 1px solid rgb(247, 245, 245);
+				}
+			</style>
 	</head>
 
     <body>
@@ -43,48 +56,82 @@
 				</section>
 
 				<section>
-					<h3>The Lorenz Equations</h3>
+					<h3>Probabilistic broadcast with coded packets</h3>
 
-					\[\begin{aligned}
-					\dot{x} &amp; = \sigma(y-x) \\
-					\dot{y} &amp; = \rho x - y - xz \\
-					\dot{z} &amp; = -\beta z + xy
-					\end{aligned} \]
 				</section>
+
+				<section>
+					<h3>Spatial Queues</h3>
+					<div id="chartdiv2", style="width:1000px; margin:0 auto;"></div>
+				</section>
+
+				<section>
+					<h3>Community detection</h3>
+					<div id="chartdiv", style="height: 500px; width:1000px; margin:0 auto;"></div>
+					<!--<div><img src="../dist/addons/Images/communities_coauthorship.png"></div>-->
+					<div data-id="1" style="background: red; position: absolute; top: 600px; left: 5%; width: 15px; height: 15px;"> </div> <h6 class="small", style = "position: absolute; top: 590px; left: 10%; height: 10px;">Machine learning</h6>
+					<div data-id="1" style="background: #77ff00; position: absolute; top: 600px; left: 60%; width: 15px; height: 15px;"> </div> <h6 class="small", style = "position: absolute; top: 590px; left: 65%; height: 10px;">Within communities</h6>
+					<div data-id="2" style="background: rgb(255, 221, 69); position: absolute; top: 670px; left: 5%; width: 15px; height: 15px;"></div>
+					<h6 class="small", style = "position: absolute; top: 660px; left: 10%; height: 10px;">Artificial Intelligence</h6>
+					<div data-id="2" style="background: #0000ff; position: absolute; top: 670px; left: 60%; width: 15px; height: 15px;"></div>
+					<h6 class="small", style = "position: absolute; top: 660px; left: 65%; height: 10px;">Across communities</h6>
+				</section>
+
+				<section>
+					<h3>Model</h3>
+					<div class="container">
+
+						<div class="col">
+							<canvas id="poissonCanvas" width="400" height="400"></canvas>
+							<script src="poisson.js"></script>
+						</div>
+						
+						<div class="col">
+						Column 2 Content
+						</div>
+						
+						</div>
+				</section>
+				
             </div>
 
 		</div>
 
-		<script src="../dist/reveal.js"></script>
-		<script src="../plugin/math/math.js"></script>
-		<script>
-			Reveal.initialize({
-				history: true,
-				transition: 'linear',
+<script src="../dist/reveal.js"></script>
+<script src="../plugin/math/math.js"></script>
+<script>
+	Reveal.initialize({
+		history: true,
+		transition: 'linear',
 
-				mathjax2: {
-					config: 'TeX-AMS_HTML-full',
-					TeX: {
-						Macros: {
-							R: '\\mathbb{R}',
-							set: [ '\\left\\{#1 \\; ; \\; #2\\right\\}', 2 ]
-						}
-					}
-				},
+		mathjax2: {
+			config: 'TeX-AMS_HTML-full',
+			TeX: {
+				Macros: {
+					R: '\\mathbb{R}',
+					set: [ '\\left\\{#1 \\; ; \\; #2\\right\\}', 2 ]
+				}
+			}
+		},
 
-				// There are three typesetters available
-				// RevealMath.MathJax2 (default)
-				// RevealMath.MathJax3
-				// RevealMath.KaTeX
-				//
-				// More info at https://revealjs.com/math/
-				plugins: [ RevealMath.MathJax2 ]
-			});
-		</script>
-		<script>
-			const myHeading = document.getElementById("yellow_heading");
-			myHeading.style.color = "#e7ad52";
-		</script>
-
+		// There are three typesetters available
+		// RevealMath.MathJax2 (default)
+		// RevealMath.MathJax3
+		// RevealMath.KaTeX
+		//
+		// More info at https://revealjs.com/math/
+		plugins: [ RevealMath.MathJax2 ]
+	});
+</script>
+<script>
+	const myHeading = document.getElementById("yellow_heading");
+	myHeading.style.color = "#e7ad52";
+</script>
+<!-- Resources -->
+<script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/map.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/geodata/worldLow.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+<script src="../dist/addons/maps2.js"></script>
 	</body>
 </html>
