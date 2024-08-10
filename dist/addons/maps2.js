@@ -349,7 +349,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
   // Set up event listeners for mouse click and right arrow key press
   //document.addEventListener('click', part2(cities,chart));
   document.addEventListener('keydown', handleKeyPress);
-  document.addEventListener('keydown', (event) => {if (event.key === 'ArrowLeft') {
-    location.reload();
-  }});
+  //document.addEventListener('keydown', (event) => {if (event.key === 'ArrowLeft') {
+  //  location.reload();
+  //}});
 });

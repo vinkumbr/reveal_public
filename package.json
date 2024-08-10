@@ -103,6 +103,7 @@
   },
   "dependencies": {
     "@amcharts/amcharts5": "^5.10.0",
-    "@amcharts/amcharts5-geodata": "^5.1.4"
+    "@amcharts/amcharts5-geodata": "^5.1.4",
+    "katex": "^0.16.11"
   }
 }

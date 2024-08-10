@@ -29,3 +29,9 @@ jobs:
       - run: npm test
         env:
           CI: true
+
+format: 
+  revealjs:
+    theme: [dark, custom.scss]
+    include-in-header:
+    - file: mathjax-color.html

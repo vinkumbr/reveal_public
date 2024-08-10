@@ -34,6 +34,15 @@
 					border: 1px solid rgb(247, 245, 245);
 				}
 			</style>
+			<!--Styles for text-->
+			<style>
+			.small {
+				font-size: 25px;
+			  }
+			.medium {
+			font-size: 35px;
+			}
+			</style>
 	</head>
 
     <body>
@@ -77,22 +86,282 @@
 					<h6 class="small", style = "position: absolute; top: 660px; left: 65%; height: 10px;">Across communities</h6>
 				</section>
 
-				<section>
+				<section data-auto-animate>
 					<h3>Model</h3>
 					<div class="container">
 
 						<div class="col">
-							<canvas id="poissonCanvas" width="400" height="400"></canvas>
-							<script src="poisson.js"></script>
+							<!--<canvas id="poissonCanvas" width="400" height="400"></canvas>
+							<script src="poisson.js"></script>-->
+							<p class="small">\[S=\left[\frac{-1}{2},\frac{1}{2}\right]^d\]</p>
+							<div class="r-stack">
+							<img  data-fragment-index="0" src="./Images/RGG_nodes.png" width = "400" height="400"/>
+							<!--<img class = "fragment current-visible" data-fragment-index="0" src="ERG_nodes.png" width = "400" height="400"/>
+							<img class = "fragment" src="ERG_edges.png" width = "400" height="400"/>-->
+							</div>
+							
 						</div>
 						
-						<div class="col">
-						Column 2 Content
+						<div class="col small">
+							<ul>
+								<li>Poisson point process  <span id="orange">\(\mathbb{X}\)</span>\(= \{X_u\}_{u=1}^N\) of intensity \(\lambda n\)</li>
+								<br>
+								<!--<li class="fragment">Two communities: <span id="mauve">\(	\sigma\)</span>\( = \sigma(1),\cdots,\sigma(N)\) 
+								<br>
+								\(\mathbf{P}(\sigma(u)=\)<span id="red	">\(+1\)</span>\()=\mathbf{P}(\sigma(u)=\)<span id="yellow">\(-1\)</span>\() = \frac{1}{2}\)
+								</li>
+								<br>
+								<li class="fragment">Connection functions: $$f_{in}(\cdot), f_{out}(\cdot): S \times S \to [0,1]$$</li>-->
+							</ul>
+							<!--<p class="fragment">Given locations <span id="orange">\(\mathbb{X}\)</span> and communities <span id="mauve">\(	\sigma\)</span></p>
+							<p class="fragment">\[A_{uv}=1 \begin{cases}\text{w.p. } f_{in }(X_u,X_v) & \text{if 	} \sigma(u)=\sigma(v)\\
+							\text{w.p. } f_{out}(X_u,X_v) & \text{if } \sigma(u) \neq \sigma(v)  \end{cases}\]</p>-->
 						</div>
 						
 						</div>
 				</section>
-				
+
+				<section data-auto-animate>
+					<h3>Model</h3>
+					<div class="container">
+
+						<div class="col">
+							<!--<canvas id="poissonCanvas" width="400" height="400"></canvas>
+							<script src="poisson.js"></script>-->
+							<p class="small">\[S=\left[\frac{-1}{2},\frac{1}{2}\right]^d\]</p>
+							<div class="r-stack">
+							<img data-fragment-index="0" src="./Images/RGG_nodes.png" width = "400" height="400"/>
+							<img data-fragment-index="0" src="./Images/ERG_nodes.png" width = "400" height="400"/>
+							<!--<img class = "fragment" src="ERG_edges.png" width = "400" height="400"/>-->
+							</div>
+							
+						</div>
+						
+						<div class="col small">
+							<ul>
+								<li>Poisson point process  <span id="orange">\(\mathbb{X}\)</span>\(= \{X_u\}_{u=1}^N\) of intensity \(\lambda n\)</li>
+								<br>
+								<li>Two communities: <span id="mauve">\(	\sigma\)</span>\( = \big(\sigma(1),\cdots,\sigma(N)\big)\) 
+								<br>
+								\(\mathbf{P}(\sigma(u)=\)<span id="red">\(+1\)</span>\()=\mathbf{P}(\sigma(u)=\)<span id="yellow">\(-1\)</span>\() = \frac{1}{2}\)
+								</li>
+								<br>
+								<li class="fragment">Connection functions: $$f_{in}(\cdot), f_{out}(\cdot): S \times S \to [0,1]$$</li>
+							</ul>
+							<!--<p class="fragment">Given locations <span id="orange">\(\mathbb{X}\)</span> and communities <span id="mauve">\(	\sigma\)</span></p>
+							<p class="fragment">\[A_{uv}=1 \begin{cases}\text{w.p. } f_{in }(X_u,X_v) & \text{if 	} \sigma(u)=\sigma(v)\\
+							\text{w.p. } f_{out}(X_u,X_v) & \text{if } \sigma(u) \neq \sigma(v)  \end{cases}\]</p>-->
+						</div>
+						
+						</div>
+				</section>
+
+				<section data-auto-animate>
+					<h3>Model</h3>
+					<div class="container">
+
+						<div class="col">
+							<!--<canvas id="poissonCanvas" width="400" height="400"></canvas>
+							<script src="poisson.js"></script>-->
+							<p class="small">\[S=\left[\frac{-1}{2},\frac{1}{2}\right]^d\]</p>
+							<div class="r-stack">
+							<img data-fragment-index="0" src="./Images/RGG_nodes.png" width = "400" height="400"/>
+							<img data-fragment-index="0" src="./Images/ERG_nodes.png" width = "400" height="400"/>
+							<img  src="./Images/ERG_edges.png" width = "400" height="400"/>
+							</div>
+							
+						</div>
+						
+						<div class="col small">
+							<ul>
+								<li>Poisson point process  <span id="orange">\(\mathbb{X}\)</span>\(= \{X_u\}_{u=1}^N\) of intensity \(\lambda n\)</li>
+								<br>
+								<li>Two communities: <span id="mauve">\(	\sigma\)</span>\( = \big(\sigma(1),\cdots,\sigma(N)\big)\) 
+								<br>
+								\(\mathbf{P}(\sigma(u)=\)<span id="lightred">\(+1\)</span>\()=\mathbf{P}(\sigma(u)=\)<span id="yellow">\(-1\)</span>\() = \frac{1}{2}\)
+								</li>
+								<br>
+								<li>Connection functions: $$f_{in}(\cdot), f_{out}(\cdot): S \times S \to [0,1]$$</li>
+							</ul>
+							<p>Given locations <span id="orange">\(\mathbb{X}\)</span> and communities <span id="mauve">\(	\sigma\)</span></p>
+							<p>\[A_{uv}=1 \begin{cases}\text{w.p. } f_{in }(X_u,X_v) & \text{if 	} \sigma(u)=\sigma(v)\\
+							\text{w.p. } f_{out}(X_u,X_v) & \text{if } \sigma(u) \neq \sigma(v)  \end{cases}\]</p>
+							<p class="fragment"><span id="springgreen">\(\mathbf{A}\)</span> \(\sim GKBM(\lambda,n,f_{in},f_{out})\)</p>
+						</div>
+						</div>
+				</section>
+					
+				<section>
+					<h3> Problem Formulation</h3>
+					<div class="small fragment" data-fragment-index="1">
+					<p><span id="springgreen">\(\mathbf{A}\)</span> \(\sim GKBM(\lambda,n,p,q,\phi)\)</p>
+					<p class="small"><span id="coral">Problem:</span> Given the locations <span id="orange">\(\mathbb{X}\)</span> and the graph <span id="springgreen">\(\mathbf{A}\)</span>, recover <span id="mauve">\(	\sigma_n\)</span> exactly.
+					</div>
+					<div class="r-stack">
+						<img class="fragment" data-fragment-index="2" src="./Images/ERG_edges.png" width = "350" height="350"/>
+						<img class="fragment"
+						data-fragment-index="3" src="./Images/ERG_problem.png" width = "350" height="350"/>
+						<img class="fragment"
+						data-fragment-index="5" src="./Images/ERG_edges.png" width = "350" height="350"/>
+						<img class="fragment"
+						data-fragment-index="6" src="./Images/ERG_swap_comm.png" width = "350" height="350"/>
+					</div>
+					<div class="small fragment"					data-fragment-index="4">An estimate <span id="mauve">\(	\hat{\sigma}_n\)</span> of <span id="mauve">\(	\sigma_n\)</span> is said to recover the communities exactly if 
+					
+					\[\lim_{n\to \infty}\mathbb{P}\big(	\color{#a689e0}{\hat{\sigma}_n} \in\{\pm \color{#a689e0}{\sigma_n} \}\big) = 1 \]
+					</div>
+				</section>
+
+				<section>
+					<h3>Main results</h3>
+					<div class="medium">Define \(\kappa = \sup_{x \in \Gamma}x, \ \ 0<\kappa<\infty\) and
+					\[I_{\phi}(p,q) := 2\int_{\mathbb{R}_+}\big[1-\sqrt{pq}\phi(x)-\sqrt{(1-p\phi(x))(1-q\phi(x))}\big]dx\]
+					<span id="gold">Converse:</span> If \(\lambda \kappa<1\) or \(\lambda I_{\phi}(p,q) < 1\), then exact recovery is not possible using any algorithm.<br>
+					<span id="gold">Achievability:</span>  If \(\lambda \kappa >1\) and \(\lambda I_{\phi}(p,q) > 1\), then there exists a linear time algorithm (in the number of edges) achieving exact recovery.
+					</div>
+				</section>
+
+				<section>
+					<h3>Impossibility: Idea</h3>
+					<div class="small">					
+					 If \(\lambda \kappa<1\) or <span id="paleturquoise">\(\lambda I_{\phi}(p,q) < 1\)</span>, then exact recovery is not possible. 
+					\[I_{\phi}(p,q) := 2\int_{\mathbb{R}_+}\big[1-\sqrt{pq}\phi(x)-\sqrt{(1-p\phi(x))(1-q\phi(x))}\big]dx\]
+					<ul>
+						<li class="fragment" data-fragment-index="1"><span id="skyblue">Genie-based estimator:</span> Log-likelihood</li>
+						<div class="r-stack">
+							<div class="fragment current-visible fade-out" data-fragment-index="2">
+						\[\sum_{\small{\stackrel{v\sim 0}{\sigma_v=\sigma_0}}} \log \ (p\phi_{v0}) + \sum_{\small{\stackrel{v\sim 0}{ \sigma_v\neq\sigma_0}}} \log \ (q\phi_{v0}) + \sum_{\small{\stackrel{v\nsim 0}{\sigma_v=\sigma_0}}} \log\  (1-p\phi_{v0})
+						+ \sum_{\small{\stackrel{v\nsim 0}{\sigma_v\neq\sigma_0}}} \log\  (1-q\phi_{v0})\]
+					</div>
+					<div class="fragment current-visible" data-fragment-index="3">
+						\[\sum_{s=1}^{\ell}
+						\sum_{v\in \mathcal{R}_s}\sum_{\stackrel{v\sim u}{\sigma_v=\sigma_u}} \log \ (pc_s) + \sum_{\stackrel{v\sim u}{ \sigma_v\neq\sigma_u}} \log \ (qc_s) + \sum_{\stackrel{v\nsim u}{\sigma_v=\sigma_u}} \log\  (1-pc_s)
+						+ \sum_{\stackrel{v\nsim u}{\sigma_v\neq\sigma_u}} \log\  (1-qc_s)\]
+					</div>
+						</div>
+						<li class="fragment" data-fragment-index="2">Approximate by simple functions</li>
+					</ul>
+					</div>
+				</section>
+			
+				<section>
+					<h3>Achievability</h3>
+					<span class="medium">Q. How to recover the communities exactly when <span id="paleturquoise">\(\lambda I_{\phi}(p,q) < 1\)</span>?</span> 
+					<div class="container">
+					<div class="col small">
+						<br>
+					<h4 class="fragment"
+					data-fragment-index="1">Two phase algorithm:</h4>
+					<span class="fragment"
+					data-fragment-index="1">Recall \(\color{#FF7F50}{\kappa}\): maximum interaction distance</span>
+					<br><br>
+					<h4 class="fragment"
+					data-fragment-index="2"><span id="skyblue">Phase-I</span>: Almost-exact recovery</h4>
+						<ul>
+							<li class="fragment"
+							data-fragment-index="2">Divide into blocks of size \(\frac{\color{#FF7F50}{\kappa}}{2}\frac{\log n}{n}\)</li>
+							<li class="fragment"
+							data-fragment-index="3">Recover exactly in an initial block</li>
+							<li class="fragment"
+							data-fragment-index="4">Propagate from a recovered block
+								to adjacent block and so on</li>
+						</ul>
+						<br><br>
+					<h4 class="fragment"
+					data-fragment-index="6"><span id="skyblue">Phase-II</span>: Refinement step</h4>
+					<ul class="fragment"
+					data-fragment-index="6"><li>Genie-based correction step \(\qquad \qquad \qquad\)</li></ul>
+					</div>
+					<div class="col small">
+						<img class="fragment"
+						data-fragment-index="1" src="./Images/kernel.png" width = "400" height="200"/>
+						<div class="r-stack">
+						<img class="fragment"
+						data-fragment-index="2" src="./Images/block_division.png" width = "400" height="300"/>
+						<img class="fragment "
+						data-fragment-index="3" src="./Images/initialization.png" width = "400" height="300"/>
+						<img class="fragment"
+						data-fragment-index="4" src="./Images/propagation.png" width = "400" height="300"/>
+						<img class="fragment"
+						data-fragment-index="5" src="./Images/propagation2.png" width = "400" height="300"/>
+						<img class="fragment"
+						data-fragment-index="6" src="./Images/refinement.png" width = "400" height="300"/>
+						</div>
+					</div>
+			</div>
+				</section>
+
+
+				<section>
+					<h3>Recovering the initial block</h3>
+					<div class="small">
+					<img class="fragment"
+						data-fragment-index="1" src="./Images/pw_classify.png" width = "500" height="100"/>
+					<ul class="fragment"
+					data-fragment-index="1" >
+						<li>Dense graph within the block.</li>
+						<li>Off-the-shelf algorithms for e.g., spectral.</li>
+						<li>Choose \(u_0 \in V_1\) and set \(\hat{\sigma}(u_0) = +1.\)</li>
+						<li>Cluster using number of common neighbours of \(u\) and \(u_0\)</li>
+					</ul>
+					<br>
+					<br>
+					<div class="block"><bem>Lemma</bem>: For any \(p > q\) and \(\Delta > 0\), communities of nodes in the initial	block \(B_1\) are recovered w.h.p., i.e.,
+					\[\color{#C8A2C8}{\mathbb{P}\Big(\bigcap_{u\in V_1} \{ \hat{\sigma}(u) = \sigma(u)	\}\Big) \ge 1-\Delta n^{-c_1}\log n}\] </div>
+				</div>
+				</section>
+
+				<section>
+					<h3>Label propagation</h3>
+					<div class="small">
+					<img class="fragment"
+						data-fragment-index="1" src="./Images/next_block_propa.png" width = "500" height="100"/>
+					<ul class="fragment"
+					data-fragment-index="1" >
+						<li>Assume that the estimated communities in block \(B_i\) are the true communities.</li>
+						<li>Evaluate the likelihood of edges to \(u \in B_{i+1}\) from vertices in \(B_i\)
+							\[\text{sign}(\sum_{v\in V_i} \hat{\sigma}(v) \mathcal{L}(A; \hat{\sigma}))\]
+						</li>
+					</ul>
+					<br>
+					<br>
+					<div class="block fragment" data-fragment-index="2"><bem>Lemma</bem>: There exists an \(M \equiv M(p, q, \phi) > 0\) such that the event \[\mathcal{A_i} := \{\text{at most }M \text{ mistakes within block }B_i \}\]  <span text-align="left">satisfies</span> \( \color{#C8A2C8}{\mathbb{P}\big( \mathcal{A_{i+1}}\big| \mathcal{A_i} \big) \ge 1-c_2 n^{-9/8}}.\) </div>
+				</div>
+				</section>
+
+				<section>
+					<h3>Label propagation: Main idea</h3>
+					<div class="small">
+						Let \(\mathcal{A_i} = \{\text{at most }M \text{ mistakes within block }B_i \}\) and \(b = \# \text{ of blocks}= \frac{2n}{\kappa \log n}\).
+						<div class="r-stack">
+						<div class="fragment fade-out" data-fragment-index="2"> 
+						\[\mathbb{P}\Big(\bigcap_{i=1}^{b }\mathcal{A}_i\Big) = \mathbb{P}(\mathcal{A}_1)\prod_{i=2}^{b}\mathbb{P}\Big(\mathcal{A}_i \Big| \bigcap_{j< i} \mathcal{A}_{j}\Big)\]
+						</div>
+						<div class="fragment" data-fragment-index="2">
+							\[\mathbb{P}\Big(\bigcap_{i=1}^{b }\mathcal{A}_i\Big) = \mathbb{P}(\mathcal{A}_1) \cdot \prod_{i=2}^{b}\mathbb{P}\Big(\mathcal{A}_i \Big| \mathcal{A}_{i-1}\Big)\] 
+						</div>
+					</div>
+					<div class="fragment" data-fragment-index="3">
+						\(\qquad \qquad \qquad \qquad \qquad \hspace{0.5cm} \ge (1-\Delta n^{-c_1}\log n ) \cdot (1-c_2 n^{-9/8})^{\frac{2n}{\kappa \log n}} \)
+					</div>
+					<div class="fragment" data-fragment-index="4">
+						\[\qquad \qquad \qquad \qquad \qquad \ge  (1-\Delta n^{-c_1}\log n ) \cdot (1-\frac{2 c_2}{n^{1/8} \kappa \log n} )\]
+						Sacrifice on probability but ensure at most \(M\) mistakes within each block.
+					</div>
+					<div class="block fragment" data-fragment-index="5"><bem>Lemma</bem>: Fix any \(\eta >0 \). For \(A \sim \text{GKBM}(\lambda, n , p, q, \phi)\), we have that <span text-align="left">satisfies</span> \[ \color{#C8A2C8}{\mathbb{P}\bigg( \text{Total }\# \text{ of mistakes} \le \frac{\eta n}{3\kappa}\bigg) = 1-o(1)}.\] </div>
+				</div>
+				</section>
+				<section>
+					<h3>Refinement step: Phase II</h3>
+					<img class="fragment"
+						data-fragment-index="1" src="./Images/refine0.png" width = "500" height="100"/>
+						<img class="fragment"
+						data-fragment-index="2" src="./Images/refine1.png" width = "500" height="100"/>
+						<img class="fragment"
+						data-fragment-index="3" src="./Images/refine_image.png" width = "500" height="100"/>
+					<div class="small">
+					</div>
+				</section>
             </div>
 
 		</div>
