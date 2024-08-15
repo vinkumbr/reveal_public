@@ -5,6 +5,10 @@
     font-size:25px;
     }
 
+    p#tiny {
+        font-size:15px;
+        }
+
 p#subheading {
     font-size:30px;
     }
@@ -25,6 +29,20 @@ text-align: left;
 box-shadow: 3px 3px 4px rgb(204, 201, 201);
 }
 
+.vid_container {
+    width: 1000px;
+    display: block;
+    overflow: hidden;
+    height: 2000px;
+}
+
+#glass {
+    margin-right: -1050px;
+}
+
+#glass2 {
+    margin-right: -1150px;
+}
 
 .reveal bem {
     font-weight: 600;

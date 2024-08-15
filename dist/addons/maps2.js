@@ -245,6 +245,8 @@ function addCity(longitude, latitude, title, color) {
 }}
 // Make stuff animate on load
 chart.appear(1000, 100);
+//chart.svgContainer.autoResize = false;
+
 
 function part2(cities,chart){
   console.log(cities.length)
@@ -338,10 +340,14 @@ document.removeEventListener('keydown', handleKeyPress);
 
 //chart2.appear(1000, 100);
 function handleKeyPress(event) {
-  if (event.key === 'ArrowRight') {
+  if (event.shiftKey) {
     part2(cities,chart);
   }
+  if (event.ctrlKey) {
+    location.reload();
+  }
 }
+
 // Initial setup: Run part1 on load
 document.addEventListener('DOMContentLoaded', (event) => {
   addCities();
