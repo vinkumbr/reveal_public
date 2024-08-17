@@ -61,15 +61,15 @@
 				<section data-auto-animate>
 					<h3>Background</h3>
 					<div class="small">
-						<h4>Capture real-world phenomena using ideas from random graphs and network science.</h4>
-						<img data-fragment-index="1" src="./Images/city_mobile_network.gif" width = "32%" height="200"/>
-						<img data-fragment-index="1" src="./Images/Smart-Cities-GIF-01.gif" width = "33%" height="200"/>
-						<video data-fragment-index="1" data-autoplay loop src="./Images/Beginning.mp4" width="33%" height="200"></video>
-						<h4>Wireless networks</h4>
-						<img data-fragment-index="1" src="./Images/facebook.jpg" width = "32%" height="200"/>
-						<img data-fragment-index="1" src="./Images/Smart-Cities-GIF-01.gif" width = "33%" height="200"/>
-						<video data-fragment-index="1" data-autoplay loop src="./Images/Beginning.mp4" width="33%" height="200"></video>
-						<h4>Wireless networks</h4>
+						<h4 class="fragment" data-fragment-index="0">Capture real-world phenomena using ideas from random graphs and network science.</h4>
+						<img class="fragment" style="margin-top: 0; margin-bottom: 0;" data-fragment-index="1" src="./Images/city_mobile_network.gif" width = "32%" height="200"/>
+						<img class="fragment" style="margin-top: 0; margin-bottom: 0;" data-fragment-index="1" src="./Images/Smart-Cities-GIF-01.gif" width = "33%" height="200"/>
+						<video class="fragment" style="margin-top: 0; margin-bottom: 0;" data-fragment-index="1" data-autoplay loop src="./Images/Beginning.mp4" width="33%" height="200"></video>
+						<h4 class="fragment" data-fragment-index="1">Wireless networks</h4>
+						<img class="fragment" style="margin-top: 0; margin-bottom: 0;" data-fragment-index="2" src="./Images/facebook.jpg" width = "32%" height="200"/>
+						<img class="fragment" style="margin-top: 0; margin-bottom: 0;" data-fragment-index="2" src="./Images/airports-network.gif" width = "33%" height="200"/>
+						<img class="fragment" style="margin-top: 0; margin-bottom: 0;" data-fragment-index="2" data-autoplay loop src="./Images/Belgian_phone_network.jpg" width="32%" height="200">
+						<h4 class="fragment" data-fragment-index="2">Social networks &emsp;&emsp;&emsp;&emsp;&emsp;&emsp; Transportation networks &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;  Data science</h4>
 				</div>
 				</section>
 
@@ -83,13 +83,20 @@
 						<div class="col small">
 						<img data-fragment-index="1" src="./Images/facebook.jpg" height="200" style="margin-top: 0px; margin-bottom: 0px;"/><h4>Social networks</h4></div>
 						<div class="col small">
-						<img data-fragment-index="1" src="./Images/Smart-Cities-GIF-01.gif" height="200" style="margin-top: 0px;margin-bottom: 0px;"/><h4>Data science</h4></div>
+						<img data-fragment-index="1" src="./Images/Belgian_phone_network.jpg" height="200" width="90%" style="margin-top: 0px;margin-bottom: 0px;"/><h4>Data science</h4></div>
 						</div>
-					</div>
+					<br>
 						<ul>
-						<li>Geometric graphs? Vertices are embedded in space and edges depend on the distance between nodes.</li>
+						<li><span id="springgreen">Geometric graphs</span>? Vertices are embedded in a metric space and edges depend on the distance between nodes.</li>
 						<li>Presence of short edges and abundance of triangles.</li>
 					</ul>
+					<br><br>
+					<div class="fragment">
+					<h4 id="yellow">Questions?</h4>
+					<ol><li>How does the network structure affect processes or information on the network?</li>
+						<li>Can local algorithms help to solve a global problem? </li>
+						<li>Does geometry help in solving a global problem efficiently?</li></ol>
+				</div></div>
 				</section>
 
 
@@ -100,8 +107,9 @@
 							<!--<canvas id="poissonCanvas" width="400" height="400"></canvas>
 							<script src="poisson.js"></script>-->
 							<div class="r-stack">
-							<img data-fragment-index="0" src="./Images/RGG_nodes.png" width = "400" height="400"/>
-							<img data-fragment-index="0" src="./Images/RGG_edges.png" width = "400" height="400"/>
+							<img class="fragment" data-fragment-index="0" src="./Images/RGG_nodes.png" width = "400" height="400"/>
+							<img class="fragment" data-fragment-index="3" src="./Images/RGG_edges.png" width = "400" height="400"/>
+							<img class="fragment" data-fragment-index="4" src="./Images/RGG_edges_with_circ.png" width = "400" height="400"/>
 							<!--<img class = "fragment" src="ERG_edges.png" width = "400" height="400"/>-->
 							</div>
 							<div class="r-stack">
@@ -269,7 +277,6 @@
 							<img class="fragment" data-fragment-index="1" src="./Images/ERG_nodes.png" width = "400" height="400"/>
 							<img class="fragment" data-fragment-index="3" src="./Images/ERG_edges.png" width = "400" height="400"/>
 							</div>
-							<br>
 							<p class="fragment small" data-fragment-index="4"><span id="springgreen">\(\mathbf{A}\)</span> \(\sim GKBM(\lambda,n,d,p,q,\varphi)\)</p>
 						</div>
 						
@@ -331,7 +338,7 @@
 				<div class="col" style="font-size: 20px;">
 					<h4>Prior work</h4>
 					<img style="margin-top: -5px; margin-right: 0%;" src="./Images/abs_kernel.png" width = "320" height="120"/>
-					<ol><li>Abbe, E., Baccelli, F., and Sankararaman, A. (2021). Community detection on Euclidean random graphs. Information and Inference: A Journal of the IMA, 10(1), 109-160.</li>
+					<ol><li>Abbe, E., Baccelli, F., and Sankararaman, A., 2021. Community detection on Euclidean random graphs. Information and Inference: A Journal of the IMA, 10(1), 109-160.</li>
 					<li>Gaudio, J., Niu, X. and Wei, E., 2024. Exact community recovery in the geometric SBM. In Proceedings of the 2024 Annual ACM-SIAM Symposium on Discrete Algorithms (SODA), 2158-2184.</li>
 					<li>Gaudio, J., Guan, C., Niu, X. and Wei, E., 2024. Exact Label Recovery in Euclidean Random Graphs. arXiv preprint arXiv:2407.11163.</li></ol>
 				</div>
@@ -350,7 +357,6 @@
 							<img data-fragment-index="0" src="./Images/model_1d.png" width = "400" height="50"/>
 							<img class="fragment" data-fragment-index="1" src="./Images/model_1d_torus.png" width = "400" height="400"/>
 							</div>
-							<br>
 							<p class="fragment small" data-fragment-index="2"><span id="springgreen">\(\mathbf{A}\)</span> \(\sim GKBM(\lambda,n,p,q,\varphi)\)</p>
 						</div>
 						
@@ -468,7 +474,7 @@
 					<br>
 					<ul text-align="left">
 						<li><span id="skyblue" >Testing Poisson vectors:</span> Prob. of error \(= n^{-\lambda \text{vol}(\Gamma_s) D_+(\mathbf{p},\mathbf{q})}\)</li> 
-						<li style="padding: 0%;">Chernoff-Hellinger distance: <span style="font-size: smaller;">\[ D_+(\mathbf{p},\mathbf{q}) := 2\sum_{s = 1}^{\ell} \big[1-\sqrt{pq}c_s-\sqrt{(1-pc_s)(1-qc_s)} \big]\]</span></li>
+						<li style="padding: 0%;">Chernoff-Hellinger divergence: <span style="font-size: smaller;">\[ D_+(\mathbf{p},\mathbf{q}) := 2\sum_{s = 1}^{\ell} \big[1-\sqrt{pq}c_s-\sqrt{(1-pc_s)(1-qc_s)} \big]\]</span></li>
 					<li>Error probability \(\to n^{-\lambda I_\varphi(p,q)} \)</li>
 					<li>Total number of errors \(\approx \lambda n^{1-\lambda I_\varphi(p,q)} \to \infty\) when <span id="paleturquoise">\(\lambda I_{\varphi}(p,q) < 1\) </span></li>
 					<div class="r-stack">
@@ -614,8 +620,82 @@
 						</ul>
 					</div>
 				</section>
-            </div>
 
+				<section>
+					<h3>Conclusions</h3>
+					<div class="small">
+						<ul><li><span id="coral">\(\lambda \kappa<1\)</span> or <span id="paleturquoise"> \(\lambda I_{\varphi}(p,q) < 1\)</span>, then communities cannot be recovered. </li>
+							<li>\(\lambda \kappa>1\) and \(\lambda I_{\varphi}(p,q) > 1\), then exact community recovery possible using a linear time algorithm. </li>
+						<li> <span id="springgreen"> Multiple communities </span> and <span id="orange"> higher dimensions.</span></li>
+					<li> Main takeaway: <span id="skyblue"> Geometry helps in global inference tasks.</span></li></ul>
+				</div>
+				<div class="fragment" data-fragment-index="2">
+					<h3>Current and future work</h3>
+					<div class="small">
+					<ul><li id="springgreen">Graphs with node inhomogenities and long-distance edges.</li>
+						<br>
+						<li id="orange">Joint kernel estimation and community detection.</li>
+						<li id="orange">Detecting communities with no information of location or in the semi-supervised regime.</li>
+						<li id="orange">Spectral and SDP algorithms.<span style="font-size: 15px;">[Abbe, Fan, Wang, Zhong (2020)]</span></li>
+						<br>
+					<li id="lightred">Inference problems on dynamic graphs</li>
+				<li id="lightred"> Community detection and percolation. </li>
+			<li id="lightred">Percolation games and games on geometric graphs.</li></ul>
+				</div></div>
+				</section>
+
+				<section>
+					<h3>Teaching profile</h3>
+					<div class="small">
+					<ul><li><span id="skyblue">Teaching aids</span>: online assignments, explanatory videos, in-class interactive quizzes</li><br>
+						<li class="fragment"><span id="skyblue">Courses @ IIT-B</span>
+						<table style="font-size: small;" width ="70%">
+							<tr>
+								<th width = "10%"><strong>Dept.</strong></th>
+								<th width = "30%"><strong>Existing courses</strong></th>
+								<th width = "30%"><strong>New courses</strong></th>
+							</tr>
+							<tr>
+								<td class="first-column" rowspan="3">IEOR</td>
+								<td>IE 611 - Introduction to Stochastic Models</td>
+								<td rowspan="3"><strong>Network Science</strong>: small-world networks, hubs, directed and weighted networks, clustering, multilayer networks, hypergraph models, SIR models, mean-field approaches</td>
+							</tr>
+							<tr>
+								<td>IE 615 - Data Analytics in Operations Research</td>
+							</tr>
+							<tr>
+								<td>IE 506 - Machine Learning: Principles and Techniques</td>
+							</tr>
+							<tr>
+								<td class="first-column" rowspan="4">Electrical Engineering</td>
+								<td>EE 621 - Markov Chains and Queuing Systems</td>
+								<td rowspan="3"><strong>Network Statistics</strong>: random graph models, network motifs, community detection, link prediction, contagion processes on networks, spectral graph theory</td>
+							</tr>
+							<tr>
+								<td>EE 229 - Signal Processing I</td>
+							</tr>
+							<tr>
+								<td>EE 706 - Communication Networks</td>
+							</tr>
+							<tr></tr>
+							<tr>
+								<td class="first-column">C-MInDS</td>
+								<td>DS 303 - Introduction to Machine Learning</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td class="first-column" rowspan="2">Mathematics</td>
+								<td>SI 539 - Random Graphs</td>
+								<td rowspan="2"><strong>Percolation</strong>: bond percolation on \( \mathbb{Z}^2 \), continuum percolation</td>
+							</tr>
+							<tr>
+								<td>SI 424 - Statistical Inference I</td>
+							</tr>
+						</table></li><br>
+					<li class="fragment"><span id="skyblue">Inter-disciplinary field</span>: adaptable to different levels of mathematical difficulty</li></ul>
+					</div>
+				</section>
+            </div>
 		</div>
 
 <script src="../dist/reveal.js"></script>
