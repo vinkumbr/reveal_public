@@ -140,7 +140,7 @@
 							<div class="fragment" data-fragment-index="3">
 							<h4>Random connection model</h4>
 							<ul><li><span style="text-align: left;">Geometric kernel: \(\varphi: \mathbb{R}_+ \to [0,1]\).</span></li>
-							<li><span style="text-align: left;">Connect two nodes at $X_u$ and $X_v$ with probability \(\varphi \big(\frac{\|X_u-X_v\|}{\rho_n^{1/d}}\big)\), where \(\rho_n = \frac{\log n}{n}\)</span></li></div>
+							<li><span style="text-align: left;">Connect two nodes at $X_u$ and $X_v$ with probability \(\varphi \Big(\frac{\|X_u-X_v\|}{(\log n / n)^{1/d}}\Big)\)</span></li></div>
 							<div class="fragment" data-fragment-index="4">
 						<li> Examples:
 							<ol><li>\(\varphi(r) = \mathbf{1}\{r \le 1\}\): random geometric graph</li>
@@ -200,12 +200,12 @@
 						<ul><li>Charging stations distributed as a PPP</li><br>
 						<li>Customers follow nearest neighbour mobility strategies</li><br>
 						<li>Characterize overloaded servers in the system</li><br>
-						<li>Spatial distribution of overloaded servers?</li><br></ul>
+						<li>Load balancing for spatial queues?</li><br></ul>
 					</div></div>
 					</div>
 				</section>
 
-				<section>
+				<section data-auto-animate>
 					<h3>Community detection</h3>
 
 					<div class="r-stack">
@@ -214,54 +214,41 @@
 						<img class="fragment" data-fragment-index="3" src="./Images/same_community_edges.png" width = "800" height="600"/>
 						<img class="fragment" data-fragment-index="3" src="./Images/erg_model_diff_comm_edges.png" width = "800" height="600"/>
 						</div>
-					<!-- <div class="container">
-						<div class="col-3" style="height: 400px; width:800px; position: absolute; top: 80px; left: 5%;">
-					<div id="chartdiv"></div></div> -->
-					<!--<div><img src="../dist/addons/Images/communities_coauthorship.png"></div>
-					<div class="col">-->
-					<!-- <div data-id="1" style="background: red; position: absolute; top: 600px; left: 5%; width: 15px; height: 15px;"> </div> <h6 class="small", style = "position: absolute; top: 590px; left: 10%; height: 10px;">Operations research</h6>
-					<div data-id="1" style="background: #77ff00; position: absolute; top: 600px; left: 60%; width: 15px; height: 15px;"> </div> <h6 class="small", style = "position: absolute; top: 590px; left: 65%; height: 10px;">Within communities</h6>
-					<div data-id="2" style="background: rgb(255, 221, 69); position: absolute; top: 670px; left: 5%; width: 15px; height: 15px;"></div>
-					<h6 class="small", style = "position: absolute; top: 660px; left: 10%; height: 10px;">Game theory</h6>
-					<div data-id="2" style="background: #0000ff; position: absolute; top: 670px; left: 60%; width: 15px; height: 15px;"></div>
-					<h6 class="small", style = "position: absolute; top: 660px; left: 65%; height: 10px;">Across communities</h6> -->
+
 				</section>
-<!--
+
 				<section data-auto-animate>
-					<h3>Model</h3>
+					<h3>Community detection</h3>
 					<div class="container">
 
 						<div class="col">
-							<canvas id="poissonCanvas" width="400" height="400"></canvas>
-							<script src="poisson.js"></script>
-							<p class="small">\[S=\left[\frac{-1}{2},\frac{1}{2}\right]^d\]</p>
-							<div class="r-stack">
-							<img  data-fragment-index="0" src="./Images/RGG_nodes.png" width = "400" height="400"/>
-							<img class = "fragment current-visible" data-fragment-index="0" src="./Images/ERG_nodes.png" width = "400" height="400"/>
-							<img class = "fragment" src="./Images/ERG_edges.png" width = "400" height="400"/>
-							</div>
+						
+						<img data-fragment-index="0" src="./Images/communities_coauthorship.png" width = "800" height="360"/>
+						<div class="r-stack">
 							
+							<div class="circle fragment" data-fragment-index="3" style="top: 300px; left: 430px;"></div>
+							<img class="fragment" data-fragment-index="3" src="./Images/kernel.png" width = "400" height="200"/>
+
 						</div>
-						
-						<div class="col small">
-							<ul>
-								<li>Poisson point process  <span id="orange">\(\mathbb{X}\)</span>\(= \{X_u\}_{u=1}^N\) of intensity \(\lambda n\)</li>
-								<br>
-								<li class="fragment">Two communities: <span id="mauve">\(	\sigma\)</span>\( = \sigma(1),\cdots,\sigma(N)\) 
-								<br>
-								\(\mathbf{P}(\sigma(u)=\)<span id="red	">\(+1\)</span>\()=\mathbf{P}(\sigma(u)=\)<span id="yellow">\(-1\)</span>\() = \frac{1}{2}\)
-								</li>
-								<br>
-								<li class="fragment">Connection functions: $$f_{in}(\cdot), f_{out}(\cdot): S \times S \to [0,1]$$</li>
-							</ul>
-							<p class="fragment">Given locations <span id="orange">\(\mathbb{X}\)</span> and communities <span id="mauve">\(	\sigma\)</span></p>
-							<p class="fragment">\[A_{uv}=1 \begin{cases}\text{w.p. } f_{in }(X_u,X_v) & \text{if 	} \sigma(u)=\sigma(v)\\
-							\text{w.p. } f_{out}(X_u,X_v) & \text{if } \sigma(u) \neq \sigma(v)  \end{cases}\]</p>
-						</div>
-						
-						</div>
+					</div>
+					<div class="col small">
+						<p class="fragment" data-fragment-index="1" >Interactions depend on:</p>
+						<ul class="fragment" data-fragment-index="1" ><li>Node communities</li><li>Distance between nodes</li></ul>
+						<br><br>
+						<h4 class="fragment" data-fragment-index="2" >Geometric dependence captured using a kernel</h4>
+						<div class="fragment" data-fragment-index="2">
+							<ul><li><span style="text-align: left;">Geometric kernel: \(\varphi: \mathbb{R}_+ \to [0,1]\).</span></li>
+							<li><span style="text-align: left;">Connect two nodes at $X_u$ and $X_v$ with probability \(\varphi\Big(\frac{\|X_u-X_v\|}{(\log n / n)^{1/d}}\Big)\).</span></li></div>
+							<br><br>
+							<div class="fragment" data-fragment-index="3">
+						<h4> Examples:</h4>
+							<ol><li>\(\varphi(r) = \mathbf{1}\{r \le 1 \}\)</li>
+							<li>General kernels</li></ol>  </li>
+						</ul>
+					</div>
+					</div>
+				</div>
 				</section>
-			-->
 
 
 				<section>
@@ -293,8 +280,8 @@
 								<!--<li>Connection functions: $$f_{in}(\cdot), f_{out}(\cdot): S \times S \to [0,1]$$</li>-->
 							</ul>
 							<p class="fragment" data-fragment-index="3">Given locations <span id="orange">\(\mathbb{X}\)</span> and communities <span id="mauve">\(	\sigma\)</span></p>
-							<p class="fragment" data-fragment-index="3">\[A_{uv}=1 \text{   w.p.   }\begin{cases} p \varphi\Big(\big(\frac{n}{\log n}\big)^{1/d}\|X_u-X_v\|\Big) & \text{if 	} \sigma(u)=\sigma(v)\\
-							q \varphi \Big(\big(\frac{n}{\log n}\big)^{1/d}\|X_u-X_v\|\Big) & \text{if } \sigma(u) \neq \sigma(v)  \end{cases}\]</p>
+							<p class="fragment" data-fragment-index="3">\[A_{uv}=1 \text{   w.p.   }\begin{cases} p \varphi\Big(\frac{\|X_u-X_v\|}{(\log n /n)^{1/d}}\Big) & \text{if 	} \sigma(u)=\sigma(v)\\
+								q \varphi \Big(\frac{\|X_u-X_v\|}{(\log n /n)^{1/d}}\Big) & \text{if } \sigma(u) \neq \sigma(v)  \end{cases}\]</p>
 							
 						</div>
 						</div>
@@ -345,7 +332,7 @@
 				</div>
 				</section>
 
-				<section>
+				<section data-auto-animate>
 					<h3>Model-1d</h3>
 					<div class="container">
 
@@ -373,60 +360,58 @@
 								<!--<li>Connection functions: $$f_{in}(\cdot), f_{out}(\cdot): S \times S \to [0,1]$$</li>-->
 							</ul>
 							<p class="fragment" data-fragment-index="2">Given locations <span id="orange">\(\mathbb{X}\)</span> and communities <span id="mauve">\(	\sigma\)</span></p>
-							<p class="fragment" data-fragment-index="2">\[A_{uv}=1 \text{   w.p.   }\begin{cases} p \varphi\Big(\frac{n}{\log n}\|X_u-X_v\|\Big) & \text{if 	} \sigma(u)=\sigma(v)\\
-							q \varphi \Big(\frac{n}{\log n}\|X_u-X_v\|\Big) & \text{if } \sigma(u) \neq \sigma(v)  \end{cases}\]</p>
+							<p class="fragment" data-fragment-index="2">\[A_{uv}=1 \text{   w.p.   }\begin{cases} p \varphi\Big(\frac{\|X_u-X_v\|}{\log n/n}\Big) & \text{if 	} \sigma(u)=\sigma(v)\\
+							q \varphi \Big(\frac{\|X_u-X_v\|}{\log n/n}\Big) & \text{if } \sigma(u) \neq \sigma(v)  \end{cases}\]</p>
 							
 						</div>
 						</div>
 				</section>
 
-				<section>
+				<section data-auto-animate>
 					<h3>Main results</h3>
-					<img  src="./Images/kernel.png" width = "400" height="200"/>
-					<div class="small">Define \(\kappa = \sup_{x \in \Gamma}x, \ \ 0<\kappa<\infty\) and
-					\[I_{\varphi}(p,q) := 2\int_{\mathbb{R}_+}\big[1-\sqrt{pq}\varphi(x)-\sqrt{(1-p\varphi(x))(1-q\varphi(x))}\big]dx\]
-					<span id="gold">Converse:</span> If <span id="coral">\(\lambda \kappa<1\)</span> or <span id="paleturquoise">\(\lambda I_{\varphi}(p,q) < 1\)</span>, then exact recovery is not possible using any algorithm.<br><br>
-					<span id="gold">Achievability:</span>  If <span id="coral">\(\lambda \kappa >1\)</span> and <span id="paleturquoise">\(\lambda I_{\varphi}(p,q) > 1\)</span>, then there exists a linear time algorithm (in the number of edges) achieving exact recovery.
+					<div class="container">
+
+						<div class="col">
+							<!--<canvas id="poissonCanvas" width="400" height="400"></canvas>
+							<script src="poisson.js"></script>-->
+							<p class="small">Torus \( S=\left[\frac{-1}{2},\frac{1}{2}\right]\)</p>
+							<div class="r-stack">
+							<img src="./Images/model_1d_torus.png" width = "300" height="250"/>
+							</div>
+							<p class="small" data-fragment-index="1"><span id="springgreen">\(\mathbf{A}\)</span> \(\sim GKBM(\lambda,n,p,q,\varphi)\)</p>
+						</div>
+						<div class="fragment col">
+					<img  src="./Images/kernel.png" width = "400" height="220"/>
+					<div class="small">Define \(\kappa = \sup_{x \in \Gamma}x, \ \ 0<\kappa<\infty\) 
 					</div>
+					<div class="small">\[I_{\varphi}(p,q) := 2\int_{\Gamma}\Big[1-\sqrt{pq}\varphi(x)-\sqrt{(1-p\varphi(x))(1-q\varphi(x))}\Big]dx\]</div></div>
+					</div>
+					<div class="fragment small">
+						<span id="gold">Converse:</span> If <span id="coral">\(\lambda \kappa<1\)</span> or <span id="paleturquoise">\(\lambda I_{\varphi}(p,q) < 1\)</span>, then exact recovery is not possible using any algorithm.<br><br>
+						<span id="gold">Achievability:</span>  If <span id="coral">\(\lambda \kappa >1\)</span> and <span id="paleturquoise">\(\lambda I_{\varphi}(p,q) > 1\)</span>, then there exists a linear time algorithm (in the number of edges) achieving exact recovery.
+						</div>
 				</section>
 
-				<section data-auto-animate>
+				<section>
 					<h3>Impossibility: Idea</h3>
 					<div class="small">		
 						<div data-id="init">
 					 If <span id="coral">\(\lambda \kappa<1\)</span> or <span id="paleturquoise">\(\lambda I_{\varphi}(p,q) < 1\)</span>, then exact recovery is not possible. 
-					\[I_{\varphi}(p,q) := 2\int_{\mathbb{R}_+}\big[1-\sqrt{pq}\varphi(x)-\sqrt{(1-p\varphi(x))(1-q\varphi(x))}\big]dx\]
+					\[I_{\varphi}(p,q) := 2\int_{\Gamma}\big[1-\sqrt{pq}\varphi(x)-\sqrt{(1-p\varphi(x))(1-q\varphi(x))}\big]dx\]
 					</div>
 					<ul>
-						<li class="fragment" data-fragment-index="1"><span id="skyblue">Genie-based estimator:</span> Log-likelihood </li>
+						<li class="fragment" data-fragment-index="1"><span id="skyblue">Genie-based estimator:</span> Given the communities of all nodes except the origin, find its community. </li>
 						<div class="r-stack">
-							<div class="fragment" data-fragment-index="2">
-								<div class="fragment fade-out" data-fragment-index="4">
-						\[\sum_{\small{\stackrel{A_{0v}=1}{\sigma_v=\sigma_0}}} \log \ (p\varphi_{v0}) + \sum_{\small{\stackrel{A_{0v}=1}{ \sigma_v\neq\sigma_0}}} \log \ (q\varphi_{v0}) + \sum_{\small{\stackrel{A_{0v}=0}{\sigma_v=\sigma_0}}} \log\  (1-p\varphi_{v0})
-						+ \sum_{\small{\stackrel{A_{0v}=0}{\sigma_v\neq\sigma_0}}} \log\  (1-q\varphi_{v0})\]
-					</div>
-					</div>
-					<div class="fragment" data-fragment-index="4">
-						<div class="fragment fade-out" data-fragment-index="5">
-						\[\sum_{s=1}^{\ell}
-						\sum_{v\in \mathcal{R}_s}\sum_{\stackrel{A_{0v}=1}{\sigma_v=\sigma_0}} \log \ (pc_s) + \sum_{\stackrel{A_{0v}=1}{ \sigma_v\neq\sigma_0}} \log \ (qc_s) + \sum_{\stackrel{A_{0v}=0}{\sigma_v=\sigma_0}} \log\  (1-pc_s)
-						+ \sum_{\stackrel{A_{0v}=0}{\sigma_v\neq\sigma_0}} \log\  (1-qc_s)\]
-					</div></div>
-					<div class="fragment" data-fragment-index="5">
-						\[\sum_{s=1}^{\ell} P_s^+ \log \ (pc_s) + Q_s^+ \log \ (qc_s) + P_s^- \log\  (1-pc_s)
-						+ Q_s^- \log\  (1-qc_s)\]
-					</div>
+							<div  class="fragment" data-fragment-index="3">
+								<div class="container">
+									<div class="col"><img class="fragment" data-fragment-index="3" src="./Images/kernel_refined.png" width = "650" height="195"/></div>
+									<div class="col"><img style="display: block;margin-bottom: 0px;" class="fragment" data-fragment-index="3" src="./Images/1d_simple_approx.png" width = "300" height="15"/><img style="display: block; margin-top: 0px;" class="fragment" data-fragment-index="3" src="./Images/concentric.png" width = "280" height="180"/></div>
+								</div>
+							</div>
 						</div>
 				</ul>
 					<div class="r-stack">
-						<div  class="fragment" data-fragment-index="3">
-							<div class="fragment fade-out" data-fragment-index="6">Approximate by simple functions
-							<div class="container">
-								<div class="col"><img class="fragment" data-fragment-index="3" src="./Images/kernel_refined.png" width = "650" height="195"/></div>
-								<div class="col"><img style="display: block;margin-bottom: 0px;" class="fragment" data-fragment-index="3" src="./Images/1d_simple_approx.png" width = "300" height="15"/><img style="display: block; margin-top: 0px;" class="fragment" data-fragment-index="3" src="./Images/concentric.png" width = "280" height="180"/></div>
-							</div>
-							</div>
-						</div>
+						
 							<div class="fragment" data-fragment-index="6"> <table data-id = "table" border="1" cellspacing="0" cellpadding="0">
 								<tr>
 									<th>In \( \mathcal{R}_s \)</th>
@@ -452,7 +437,7 @@
 					<div class="small">		
 						<div data-id="init">		
 					 If <span id="coral">\(\lambda \kappa<1\)</span> or <span id="paleturquoise">\(\lambda I_{\varphi}(p,q) < 1\) </span>, then exact recovery is not possible. 
-					 <span style="font-size: smaller;">\[I_{\varphi}(p,q) := 2\int_{\mathbb{R}_+}\big[1-\sqrt{pq}\varphi(x)-\sqrt{(1-p\varphi(x))(1-q\varphi(x))}\big]dx\]</span>
+					 <span style="font-size: smaller;">\[I_{\varphi}(p,q) := 2\int_{\Gamma}\big[1-\sqrt{pq}\varphi(x)-\sqrt{(1-p\varphi(x))(1-q\varphi(x))}\big]dx\]</span>
 					</div>
 					<table data-id = "table" border="1" cellspacing="0" cellpadding="0">
 						<tr>
@@ -490,41 +475,50 @@
 					<div class="col small">
 						<br>
 					<h4 class="fragment"
-					data-fragment-index="1">Two phase algorithm:</h4>
+					data-fragment-index="1">Three phase algorithm:</h4>
 					<span class="fragment"
 					data-fragment-index="1">Recall \(\color{#FF7F50}{\kappa}\): maximum interaction distance</span>
 					<br><br>
-					<h4 class="fragment"
-					data-fragment-index="2"><span id="skyblue">Phase-I</span>: Almost-exact recovery</h4>
-						<ul>
+					<ul>					<h4  style="margin-top: 0; margin-bottom: 0;" class="fragment"
+					data-fragment-index="2"><span id="skyblue">Initialization Phase</span></h4>
+						<ul style="margin-top: 0; margin-bottom: 0;">
 							<li class="fragment"
-							data-fragment-index="2">Divide into blocks of size \(\frac{\color{#FF7F50}{\kappa}}{2}\frac{\log n}{n}\)</li>
+							data-fragment-index="2">Divide into blocks of size \(\frac{\color{#FF7F50}{\kappa}}{2}\frac{\log n}{n}\).</li>
 							<li class="fragment"
-							data-fragment-index="3">Recover exactly in an initial block</li>
-							<li class="fragment"
-							data-fragment-index="4">Propagate from a recovered block
-								to adjacent block and so on</li>
+							data-fragment-index="2">Recover exactly in an initial block.</li>
 						</ul>
-						<br><br>
-					<h4 class="fragment"
-					data-fragment-index="6"><span id="skyblue">Phase-II</span>: Refinement step</h4>
-					<ul class="fragment"
-					data-fragment-index="6"><li>Genie-based correction step \(\qquad \qquad \qquad\)</li></ul>
+						<br>
+						<h4  style="margin-top: 0; margin-bottom: 0;" class="fragment"
+					data-fragment-index="4"><span id="skyblue">Propagation Phase</span></h4>
+						<ul style="margin-top: 0;">
+							<li class="fragment"
+							data-fragment-index="4">Propagate from a recovered block to an adjacent block and so on.</li>
+						</ul>
+						<br>
+						<h4  style="margin-top: 0; margin-bottom: 0;" class="fragment"
+						data-fragment-index="6"><span id="skyblue">Refinement Phase</span></h4>
+							<ul style="margin-top: 0;">
+								<li class="fragment"
+								data-fragment-index="6">Genie-based correction step</li>
+							</ul>
+						</ul>
 					</div>
 					<div class="col small">
 						<img class="fragment"
 						data-fragment-index="1" src="./Images/kernel.png" width = "400" height="200"/>
 						<div class="r-stack">
-						<img class="fragment"
+						<img class="fragment current-visible"
 						data-fragment-index="2" src="./Images/block_division.png" width = "400" height="300"/>
-						<img class="fragment "
+						<img class="fragment current-visible"
 						data-fragment-index="3" src="./Images/initialization.png" width = "400" height="300"/>
-						<img class="fragment"
-						data-fragment-index="4" src="./Images/propagation.png" width = "400" height="300"/>
-						<img class="fragment"
+						<img class="fragment current-visible"
+						data-fragment-index="4"   src="./Images/propagation.png" width = "400" height="300"/>
+						<img class="fragment current-visible"
 						data-fragment-index="5" src="./Images/propagation2.png" width = "400" height="300"/>
-						<img class="fragment"
+						<img class="fragment current-visible"
 						data-fragment-index="6" src="./Images/refinement.png" width = "400" height="300"/>
+						<span class="fragment current-visible"
+					data-fragment-index=11" id="paleturquoise">Linear time algorithm</span>
 						</div>
 					</div>
 			</div>
@@ -637,11 +631,11 @@
 						<br>
 						<li id="orange">Joint kernel estimation and community detection.</li>
 						<li id="orange">Detecting communities with no information of location or in the semi-supervised regime.</li>
-						<li id="orange">Spectral and SDP algorithms.<span style="font-size: 15px;">[Abbe, Fan, Wang, Zhong (2020)]</span></li>
+						<li id="orange">Spectral and SDP algorithms.</li>
 						<br>
-					<li id="lightred">Inference problems on random graphs</li>
+					<li id="lightred">Statistical inference problems on random graphs</li>
 				<li id="lightred"> Community detection and percolation. </li>
-			<li id="lightred">Percolation games and games on geometric graphs.</li></ul>
+			<li id="lightred">Load balancing in spatial queues..</li></ul>
 				</div></div>
 				</section>
 
@@ -658,7 +652,7 @@
 							</tr>
 							<tr>
 								<td>EE1101 Signals and Systems</td>
-								<td rowspan="4"><strong>Random graphs and percolation</strong> Erd\"{o}s-R\'{e}nyi graphs, preferential attachment graphs, random geometric graphs, bond percolation on $\mathbb{Z}^d$, continuum percolation, first passage percolation</td>
+								<td rowspan="4"><strong>Random graphs and percolation:</strong> Erdős-Rényi graphs, preferential attachment graphs, random geometric graphs, bond percolation on $\mathbb{Z}^d$, continuum percolation, </td>
 							</tr>
 							<tr>
 								<td>EE3110 Probability Foundations for Electrical Engineers</td>
