@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>Community detection on geometric graphs</title>
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<link rel="stylesheet" href="../dist/reveal.css">
+		<link rel="stylesheet" href="../dist/theme/night.css" id="theme">
+		<link rel="stylesheet" href="../dist/addons/envs.css" id="envs">
+		<style type="text/css" media="screen">
+			.slides section.has-dark-background,
+			.slides section.has-dark-background h2 {
+				color: #fff;
+			}
+			.slides section.has-light-background,
+			.slides section.has-light-background h2 {
+				color: #222;
+			}
+		</style>
+		<style>
+			.container{
+				display: flex;
+			}
+            .col_large{
+                flex:1.5;
+            }
+			.col{
+				flex: 1;
+			}
+			</style>
+			<style>
+				canvas {
+					border: 1px solid rgb(247, 245, 245);
+				}
+			</style>
+			<!--Styles for text-->
+			<style>
+			.small {
+				font-size: 25px;
+			  }
+			.medium {
+			font-size: 35px;
+			}
+			.smaller{
+				font-size: 20px;
+			}
+			</style>
+			<style>
+				.circle {
+					width: 50px; /* Adjust size */
+					height: 50px; /* Adjust size */
+					border-radius: 50%;
+					border: 4px solid #3498db;
+					background-color: transparent; /* Circle color */
+					position: absolute;
+					top: 50%; /* Adjust vertical position */
+					left: 50%; /* Adjust horizontal position */
+					transform: translate(-50%, -50%);
+				}
+			</style>
+	</head>
+
+    <body>
+
+		<div class="reveal">
+
+			<div class="slides">
+
+				<section>
+					<h3  style="margin-top: 2cm;">Spatial Queues with Nearest Neighbour Shifts</h3>
+					<h4 style="margin-top: 3cm;"> <span id="yellow_heading"  >B. R. Vinay Kumar</span> & <strong>Lasse Leskelä</strong></p></h4>
+                    <canvas id="stickQueueCanvas" width="1280" height="720" style="border:0; background:transparent; position:absolute; top:0; left:0; z-index:-1;"></canvas>
+					<p id="small" style="margin-top: 3cm;">INRIA NIM<br>April 15, 2025<br>Sophia Antipolis, France</psmall>
+				</section>
+
+    <section>
+      <h3>Motivation</h3>
+      <div class="small">
+        <div class="container"> 
+            <div class="col small">
+            <img data-fragment-index="1" src="./Images/spatial_queues/airport.png" height="200" width="300" style="margin-top: 0px; margin-bottom: 0px;"/><h4>Airports</h4></div>
+            <div class="col small">
+            <img data-fragment-index="1" src="./Images/spatial_queues/supermarket.jpg" height="200" width="60%" style="margin-top: 0px;margin-bottom: 0px;"/><h4>Supermarkets</h4></div>
+            </div>
+            <div class="col small fragment" data-fragment-index="2">
+            <img  src="./Images/spatial_queues/qconfused.gif" height="250" width="250" style="margin-top: 0px; margin-bottom: 0px;"/><h4>Restless jumper</h4></div>   
+      </div>
+      <div class="fragment data-fragment-index="3"><strong>Goal:</strong> Understand overload behavior when customers follow strategies.</div>
+    </section>
+
+
+    <section>
+        <h3>EV charging</h3>
+        <div class="container">
+            <div class="col small">
+        <div class="r-stack">
+            <div class="fragment" data-fragment-index="0"><div class="fragment fade-out" data-fragment-index="2">
+            <img  src="./Images/evcs_dist.png" width = "700" height="600" style="margin-top: 0px; margin-bottom: 0px;"/></div></div>
+            <img class="fragment" data-fragment-index="2" src="./Images/evcs_nn.png" width = "700" height="600"/>
+            </div>
+        </div>
+        <div class="col small" style="text-align: left;">
+            <br>
+            <p id="tiny" class="fragment"  data-fragment-index="1"> J. Kang, C. Kan, and Z. Lin, <br><br>“Are Electric Vehicles Reshaping the City? An Investigation of the Clustering of Electric Vehicle Owners’ Dwellings and Their Interaction with Urban Spaces,”<br><br> ISPRS International Journal of Geo-Information, vol. 10, no. 5, May 2021.
+            </p><br>
+            <h4 class="fragment" data-fragment-index="2" id="springgreen">Related work</h4>
+            <p id="small" class="fragment" data-fragment-index="2"> E. Altman, H. Levy, Queueing in space, Adv. in Appl. Probab. 26 (4) (1994) 1095–1116.</p>
+            <p id="small" class="fragment" data-fragment-index="3">N.K. Panigrahy, T. Vasantam, P. Basu, D. Towsley, A. Swami, K.K. Leung, On the analysis and evaluation of proximity-based load-balancing policies, ACM Trans. Model. Perform. Evaluat. Comput. Syst. 7 (2–4) (2022) 1–27.</p>
+        </div>
+        </div>
+    </section>
+
+    <section>
+      <h3>System Model</h3>
+      <br>
+      <div class="small">
+        <div class="container">
+            <div class="col small">
+      <ul>
+        <li>$N$ service stations distributed uniformly $\{X_i\}_{i=1}^N \subset [0,1]^d$</li>
+        <br><br>
+        <li class="fragment" data-fragment-index="1">Each service station:
+          <ul>
+            <li>Service rate: $\mu$</li>
+            <li>Arrival process: $\lambda$</li>
+            <li>Infinite capacity</li>
+          </ul>
+        </li>
+        <br><br>
+        <li class="fragment" data-fragment-index="2">
+            <span id="springgreen">\((k, p)\)-Nearest Neighbour Shift (NNS)</span>
+            <ul>
+              <li>Customer arrives at server $i$</li>
+              <li>With probability $1 - p$, stays at $i$</li>
+              <li>With probability $p$, chooses uniformly among $k$ nearest neighbours $\mathcal{N}_k(i)$</li>
+            </ul></li>
+      </ul>
+    </div>
+    <div class="col">
+        <!--<canvas id="poissonCanvas" width="400" height="400"></canvas>
+        <script src="poisson.js"></script>-->
+        <div class="r-stack">
+        <img data-fragment-index="0" src="./Images/spatial_queues/RGG_nodes.png" width = "400" height="400"/>
+        <img class="fragment" data-fragment-index="1" src="./Images/spatial_queues/RGG_arrival.png" width = "400" height="400"/>
+        <img class="fragment" data-fragment-index="2" src="./Images/spatial_queues/stay_1-p.png" width = "400" height="400"/>
+        <img class="fragment" data-fragment-index="3" src="./Images/spatial_queues/kNN_p.png" width = "400" height="400"/>
+        </div>
+        <div class="r-stack">
+            <img data-fragment-index="0" src="./Images/spatial_queues/1d_servers.png" width = "400" height="60"/>
+            <img class="fragment" data-fragment-index="1" src="./Images/spatial_queues/1d_arrivals.png" width = "400" height="80"/>
+        </div>
+    </div></div></div>
+    </section>
+
+    <section>
+        <h3>Problem statement</h3>
+        <div class="container">
+            <div class="col small">
+      
+      <ul>
+        <li>
+            Define the effective arrival rate at server $i$:
+      <p>\(\lambda_{\text{eff}}(i) = \)  <span id = "skyblue">\(\lambda(1 - p)\)</span>  \(+\) <span id = "orange">\(\sum_{j: i \in \mathcal{N}_k(j)} \frac{p}{k} \lambda\)</span></p>
+        </li>
+        <br>
+    <li class="fragment" data-fragment-index="2">
+        The <span id="mauve">effective load</span> at server $i$ is 
+        $$\rho_i = \frac{\lambda_{\text{eff}}(i)}{\mu}$$
+    </li>
+    <br>
+    <li class="fragment" data-fragment-index="2">
+        A server is overloaded if $\rho_i > 1$
+    </li>
+    <br>
+    <li class="fragment" data-fragment-index="2">
+        The main object of interest:
+      <p><span id="paleturquoise">\(\mathcal{O}_N\)</span> \(= \frac{1}{N} \left| \{ i : \rho_i > 1 \} \right|\)</p>
+    </li>
+    </ul>
+            </div>
+            <div class="col">
+                <img class="fragment" data-fragment-index="1" src="./Images/spatial_queues/lambda_eff.png" width = "400" height="400"/>
+                <br>
+            <p class="small fragment"><span id="paleturquoise" data-fragment-index="2">Fraction of overloaded servers</span></p>
+            </div>
+            
+        </div>
+    </section>
+
+
+    <section>
+      <h3>Main Result: General Dimension</h3>
+      <div class="container">
+      <div class="col small">
+      <ul>
+        <br>
+        <li class="fragment" data-fragment-index="1">If $\frac{\lambda}{\mu} \leq \frac{1}{1 - p + \alpha_d p}$, then $\mathcal{O}_N = 0$ a.s. for all $N$.</li>
+        <br>
+        <li class="fragment" data-fragment-index="3">If $\frac{\lambda}{\mu} > \frac{1}{1 - p + \alpha_d p}$, then there exist constants \(q_{d,k,n}\) and \(\sigma_{d,k}\) such that
+          <ul>
+            <br>
+            <li> <span id="orange">Law of large numbers: </span><br>
+                <p><span id="paleturquoise">\(\ \ \ \ \ \mathcal{O}_N\)</span> \(\xrightarrow{\text{a.s.}} \sum_{n = \lfloor \theta \rfloor + 1}^{\alpha_d k} q_{d,k,n}\)</p>
+                <p>where $\theta = k + \frac{k}{p} \left( \frac{\mu}{\lambda} - 1 \right)$</p>
+            </li>
+            <li> <span id="orange">Central limit theorem:</span><br>
+                <span id="paleturquoise">\( \ \ \ \ \ \sqrt{N} (\mathcal{O}_N - \mathbb{E}[\mathcal{O}_N])\) </span>\(\xrightarrow{d} \mathcal{N}(0, \sigma_{d,k}^2)\)
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+        <div class="col small">
+            <img class="fragment" data-fragment-index="0" src="./Images/spatial_queues/lambda_eff.png" width = "300" height="300"/>
+            <br>
+            <img class="fragment" data-fragment-index="2" src="./Images/spatial_queues/kissing.png" width = "200" height="200"/>
+                <br>
+              <span class="fragment" data-fragment-index="2">  \(\alpha_d \le \text{ kissing number}\)</span>
+        </div>
+    </div>
+    </section>
+
+    <section>
+        <h3>Main Result: \(d=1\) and \(k=1\)</h3>
+        <div class="container">
+        <div class="col small">
+        <ul>
+          <br>
+          <li class="fragment" data-fragment-index="1">If $\frac{\lambda}{\mu} \leq \frac{1}{1 + p}$, then $\mathcal{O}_N = 0$ a.s. for all $N$.</li>
+          <br>
+          <li class="fragment" data-fragment-index="2">If $\frac{\lambda}{\mu} > \frac{1}{1 + p}$, then
+            <ul>
+              <br>
+              <li> <span id="orange">Law of large numbers: </span><br>
+                  <p><span id="paleturquoise">\(\ \ \ \ \ \mathcal{O}_N\)</span> \(\xrightarrow{\text{a.s.}} \frac{1}{4}\)</p>
+              </li>
+              <li> <span id="orange">Central limit theorem:</span><br>
+                  <span id="paleturquoise">\( \ \ \ \ \ \sqrt{N} (\mathcal{O}_N - \mathbb{E}[\mathcal{O}_N])\) </span>\(\xrightarrow{d} \mathcal{N}(0, \frac{19}{240})\)
+              </li>
+              <br>
+              <li> <span id="orange">Expected number:</span> For every $N\ge 4$, <br><br>
+                <span id="paleturquoise">\( \ \ \ \ \  \mathbb{E} \big[\mathcal{O}_N\big]\) </span>\( =  \frac{1}{4}\)
+            </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+          <div class="col small">
+            <br><br><br>
+              <img class="fragment" data-fragment-index="0" src="./Images/spatial_queues/1d_arrivals.png" width = "400" height="80"/>
+              <br><br><br>
+              <img class="fragment" data-fragment-index="1" src="./Images/spatial_queues/1d_kissing.png" width = "400" height="80"/>
+              <br><br><br>
+              <img class="fragment" data-fragment-index="2" src="./Images/spatial_queues/1d_k=1.png" width = "400" height="80"/>
+                  <br>
+          </div>
+      </div>
+      </section>
+
+
+    <section data-auto-animate>
+      <h3>One dimension</h3>
+      <img class="fragment" data-fragment-index="0" src="./Images/spatial_queues/1d_arrivals.png" width = "400" height="80"/>
+      <div class="small">
+        <ul>
+            <li  class="fragment" data-fragment-index="1"><span id="springgreen">Counterintuitive:</span> Nearest neighbour relation is not symmetric. </li>
+        
+            <li class="fragment" data-fragment-index="1">Suffices to look at the \(p=1\) case.</li>
+           
+            <li class="fragment" data-fragment-index="1"><div class="container"><div class="col">Distribution of consecutive ordered statistics</div><div class="col"> <img class="fragment" data-fragment-index="2" src="./Images/spatial_queues/intuition.png" width = "400" height="80"/></div></li>
+          </ul>
+      </div>
+      <div class="container">
+        <div class="col small fragment" data-fragment-index="3">
+            Load = 0<br>
+            <img src="./Images/spatial_queues/load0.png" width = "400" height="80"/><br>
+            Load = 2<br>
+            <img src="./Images/spatial_queues/load2.png" width = "400" height="80"/>
+        </div>
+        <div class="col small fragment" data-fragment-index="3">
+            Load = 1<br>
+            <img  src="./Images/spatial_queues/load11.png" width = "400" height="80"/>
+            <br><br>
+            <img src="./Images/spatial_queues/load12.png" width = "400" height="80"/>
+        </div>
+      </div>
+    </section>
+
+
+    <section data-auto-animate>
+        <h3>One dimension</h3>
+        <div class="container">
+          <div class="col small">
+              Load = 0<br>
+              <img src="./Images/spatial_queues/load0.png" width = "400" height="80"/><br>
+              Load = 2<br>
+              <img src="./Images/spatial_queues/load2.png" width = "400" height="80"/>
+          </div>
+          <div class="col small">
+              Load = 1<br>
+              <img  src="./Images/spatial_queues/load11.png" width = "400" height="80"/>
+              <br><br>
+              <img src="./Images/spatial_queues/load12.png" width = "400" height="80"/>
+          </div>
+        </div>
+        <div class="small fragment">
+            <ul>
+                <li>
+                    All confgurations are equally likely
+                </li>
+                <br>
+                <li>
+                    <span id="paleturquoise">\( \mathbb{E} \big[\mathcal{O}_N\big]\)</span> \(= \mathbb{E}\big[\sum_{i=1}^N \mathbf{1}\big\{\text{server }i \text{ has load }2 \big\}\big] =  \frac{1}{4}\)
+                </li>
+                <br>
+                <li>
+                    Can also show <span id="mauve"># of servers with load 0 = # servers with load 2</span>
+                </li>
+            </ul>
+            <br><br>
+        </div>
+        <h5 class="fragment"><span id="coral">Drawbacks:</span> Hard to generalize to \(k>1\) or \(d>1\).</h5>
+    </section>
+
+<section data-auto-animate="">
+    <h3>\(k\)-NN graph</h3>
+    <div class="container">
+    <div class="col_large small">
+        <br>
+    <ul class="fragment" data-fragment-index="1">
+        <li>
+            Directed graph on \(N\) vertices, <span id="orange">\(G_{d,k}^N\)</span>
+        </li>
+        <br>
+        <li>
+            An edge from \(i\rightarrow j\) if \(j\) is one of the \(k\) nearest neighoburs of \(i\).
+        </li>
+        <br>
+        <li>
+            <div class="fragment" data-fragment-index="2">
+                <span id="springgreen">Properties:</span> For all \(i \in [N]\),
+                <br>
+                <ul>
+                    <li>
+                    \(d_{\text{out}}(i) = k\)
+                    </li>
+                    <li>
+                        \(d_{\text{in}}(i) \le \alpha_d k\)
+                    </li>
+                </ul>
+            </div>
+        </li>
+        <br>
+        <li class="fragment" data-fragment-index="3">
+            Define <span id="mauve">\(Q_{d,k,j}^N\)</span> \(\:=\)  Number of nodes with in-degree \(j\) in <span id="orange">\(G_{d,k}^N\)</span>
+        </li>
+        <br>
+        <li class="fragment" data-fragment-index="3">
+            <span id="springgreen">
+                LLN and CLT
+            </span>
+            <br> <br>
+            \(\frac{Q_{d,k,j}^N}{N} \xrightarrow{a.s.} q_{d,k,j} \) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; \(\frac{Q_{d,k,j}^N-\mathbb{E}Q_{d,k,j}^N}{\sqrt{N}} \xrightarrow{d} \mathcal{N}(0,\sigma_{d,k,j}^2)\)
+        </li>
+    </ul>
+    <br><br>
+    
+</div>
+<div class="col small fragment" data-fragment-index="1">
+    <img  src="./Images/spatial_queues/nearest_neighbor_graph_red_circles_white_edges.png" width = "400" height="400"/>
+</div></div>
+</section>
+
+
+
+<section data-auto-animate>
+    <h3>Overloaded servers and the \(k\)-NN graph</h3>
+    <div class="container">
+        <div class="col_large small">
+            <br>
+    <ul class="fragment" data-fragment-index="1">
+        <li>
+            \(k\)-NN graph  - <span id="orange">\(G_{d,k}^N\)</span>
+        </li>
+        <br>
+        <li>
+            Define <span id="mauve">\(Q_{d,k,j}^N\)</span> \(\:=\)  Number of nodes with in-degree \(j\) in <span id="orange">\(G_{d,k}^N\)</span>
+        </li>
+        <br>
+        <li>
+            <span id="springgreen">
+                LLN and CLT
+            </span>
+            <br><br>
+            \(\frac{Q_{d,k,j}^N}{N} \xrightarrow{a.s.} q_{d,k,j} \) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; \(\frac{Q_{d,k,j}^N-\mathbb{E}Q_{d,k,j}^N}{\sqrt{N}} \xrightarrow{d} \mathcal{N}(0,\sigma_{d,k,j}^2)\)
+        </li>
+        <br>
+        <li class="fragment" data-fragment-index="2">
+            A server \(i\) is <span id="mauve"> overloaded</span> if 
+            <div class="r-stack">
+                <div class="fragment current-visible" data-fragment-index="2">\(\rho_i > 1\)</div>
+                <div class="fragment current-visible" data-fragment-index="3">\(\lambda_{\text{eff}}(i) > \mu\)</div>
+                <div class="fragment current-visible" data-fragment-index="4">\( \lambda(1 - p)+ \sum_{j: i \in \mathcal{N}_k(j)} \frac{p}{k} \lambda > \mu \)
+                </div>
+                <div class="fragment current-visible" data-fragment-index="5">\( \lambda(1 - p)+ d_{\text{in}}(i) \frac{p}{k} \lambda > \mu \)
+                </div>
+                <div class="fragment" data-fragment-index="6">\(  d_{\text{in}}(i) >k+\frac{k}{p}\Big(\frac{\mu }{\lambda}-1\Big) =: \theta \)
+                </div>
+            </div>
+        </li>
+        <br>
+        <li class="fragment" data-fragment-index="6">
+            Fraction of overloaded servers<br>
+            <span id="paleturquoise">\(\hspace{3cm}\mathcal{O}_N\)</span> \(=\begin{cases}\frac{1}{N} \sum_{j=\theta+1}^{\alpha_d k }Q_{d,k,j}^N & \theta < \alpha_d k \\
+            0 & \theta \ge \alpha_d k\end{cases}\)
+        </li>
+    </ul>
+    <br><br>
+    
+</div>
+<div class="col small fragment" data-fragment-index="1">
+    <img  src="./Images/spatial_queues/nearest_neighbor_graph_red_circles_white_edges.png" width = "400" height="400"/>
+</div></div>
+</section>
+
+
+    <section>
+      <h3>Numerical Simulations</h3>
+      <div class="small">
+        <ul>
+            <li>Simulation over $N = 1000$ servers, $\lambda = 1$, $\mu = 1.25$</li>
+            <br>
+            <li>Shifting probability $p \in \{0.25, 0.5, 0.75, 1.0\}$</li>
+            <br>
+          </ul>
+      </div>
+      <div class="container">
+      <div class="col small">
+        <img src="./Images/spatial_queues/1d_overload.png" width = "500" height="400"/><br>
+        \(d=1\)
+      </div>
+      <div class="col small">
+        <img src="./Images/spatial_queues/2d_overload.png" width = "500" height="400"/><br>
+        \(d=2\)
+      </div>
+    </div>      
+    </section>
+
+<section>
+    <h3>
+        Load balancing on spatial queues
+    </h3>
+    <div class="container">
+        <div class="col small">
+         <ul>
+            <li>
+                \(N\) servers around a circle
+            </li>
+            <br>
+            <li>
+                \(N\) arrivals uniformly on the circle
+            </li>
+            <br>
+            <li>
+                Arrivals joins the shortest among \(k\) nearest queues
+            </li>
+            <br>
+         </ul>
+         <div class="fragment" data-fragment-index="2">
+            <br>
+         <span id="springgreen" class="medium">Theorem</span><br><br>
+         <ul>
+            <li>
+                If \(k=O(1)\), then there exists a server with load \(\frac{\log N}{\log \log N}\) with high probability.
+            </li>
+            <br>
+            <li>
+                If \(k>\frac{2\log \log N}{3}\), then the number of servers with load \(>\frac{\log N}{\log \log N}\) converges to \(0\).
+            </li>
+         </ul>
+        </div>
+        </div>
+        <div class="col small">
+            <div class="r-stack">
+            <img class="fragment" data-fragment-index="0" src="./Images/spatial_queues/circle_loads.png" width = "500" height="400"/>
+          <img class="fragment" data-fragment-index="1" src="./Images/spatial_queues/load_char.png" width = "500" height="400"/>
+        </div>
+        </div>
+      </div>      
+</section>
+
+    <section>
+      <h3>Future Work</h3>
+      <div class="container">
+
+      <div class="col small">
+        <img class="fragment" data-fragment-index="0" src="./Images/spatial_queues/stations_100_p-40_1d_big.png" width = "500" height="400"/>
+    </div>
+    <div class="col small">
+        <img class="fragment" data-fragment-index="0" src="./Images/spatial_queues/stations_1000_p-40_2d.png" width = "500" height="400"/>
+    </div>
+      </div>
+    </section>
+
+    <section>
+        <canvas id="stickQueueCanvas" width="1280" height="720" style="border:0; background:transparent; position:absolute; top:0; left:0; z-index:-1;"></canvas>
+      <h2>Thanks!</h2>
+      <p>Email: <span id="springgreen">v.k.bindiganvile.ramadas@tue.nl</span></p>
+      <p>Paper: <a href="https://arxiv.org/abs/2402.13192">https://arxiv.org/abs/2402.13192</a></p>
+      <p>Website: <span id="orange">vinkumbr.github.io  </span></p>
+    </section>
+
+  </div>
+</div>
+
+<script src="../dist/reveal.js"></script>
+<script src="../plugin/math/math.js"></script>
+<script>
+	Reveal.initialize({
+		history: true,
+		transition: 'linear',
+
+		mathjax2: {
+			config: 'TeX-AMS_HTML-full',
+			TeX: {
+				Macros: {
+					R: '\\mathbb{R}',
+					set: [ '\\left\\{#1 \\; ; \\; #2\\right\\}', 2 ]
+				}
+			}
+		},
+
+		// There are three typesetters available
+		// RevealMath.MathJax2 (default)
+		// RevealMath.MathJax3
+		// RevealMath.KaTeX
+		//
+		// More info at https://revealjs.com/math/
+		plugins: [ RevealMath.MathJax2 ]
+	});
+</script>
+<script>
+	const myHeading = document.getElementById("yellow_heading");
+	myHeading.style.color = "#e7ad52";
+</script>
+<!-- Resources -->
+<script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/map.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/geodata/worldLow.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+<script src="../dist/addons/maps2.js"></script>
+
+
+<script>
+    const canvas = document.getElementById("stickQueueCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const COLORS = ["#e74c3c", "#3498db", "#2ecc71", "#f1c40f", "#9b59b6"];
+    const NUM_FIGURES = 20;
+
+    const figures = Array.from({ length: NUM_FIGURES }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      dx: (Math.random() - 0.5) * 2,
+      dy: (Math.random() - 0.5) * 2,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)]
+    }));
+
+    function drawStickFigure(x, y, color) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+
+      // Head
+      ctx.beginPath();
+      ctx.arc(x, y, 8, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Body
+      ctx.beginPath();
+      ctx.moveTo(x, y + 8);
+      ctx.lineTo(x, y + 30);
+      ctx.stroke();
+
+      // Arms
+      ctx.beginPath();
+      ctx.moveTo(x - 10, y + 18);
+      ctx.lineTo(x + 10, y + 18);
+      ctx.stroke();
+
+      // Legs
+      ctx.beginPath();
+      ctx.moveTo(x, y + 30);
+      ctx.lineTo(x - 7, y + 45);
+      ctx.moveTo(x, y + 30);
+      ctx.lineTo(x + 7, y + 45);
+      ctx.stroke();
+    }
+
+    function updateFigures() {
+      for (const f of figures) {
+        f.x += f.dx;
+        f.y += f.dy;
+
+        // Bounce off walls
+        if (f.x < 10 || f.x > canvas.width - 10) f.dx *= -1;
+        if (f.y < 10 || f.y > canvas.height - 50) f.dy *= -1;
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      updateFigures();
+      for (const f of figures) {
+        drawStickFigure(f.x, f.y, f.color);
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
