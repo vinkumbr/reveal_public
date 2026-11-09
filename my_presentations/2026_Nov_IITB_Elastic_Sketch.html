@@ -1,0 +1,2639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Counting in streams using the Elastic Sketch</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Reveal.js CDN CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/dracula.min.css">
+  <style>
+    /* Larger typography with compact spacing to keep dense slides readable. */
+    .reveal { font-size: 28px; }
+    .reveal h1 { font-size: 1.8em; text-transform: none; color: #f0f07a;}
+    .reveal h2 { font-size: 1.3em; text-transform: none; color: #f8f8f2; }
+    .reveal h3 { font-size: 1.05em; text-transform: none; color: #bd93f9; }
+    .reveal h4 { font-size: 0.95em; text-transform: none; color: #50fa7b; margin-bottom: 8px; }
+    .reveal p, .reveal li { font-size: 0.88em; line-height: 1.3; }
+    .highlight { color: #f1fa8c; font-weight: bold; }
+    .box { background: #282a36; border: 1px solid #44475a; padding: 12px 16px; border-radius: 8px; margin-top: 10px; }
+    .flex-container { display: flex; justify-content: space-between; align-items: stretch; gap: 15px; }
+    .col { flex: 1; padding: 10px; }
+    .stream-container { display: flex; gap: 12px; flex-wrap: nowrap; align-items: stretch; }
+    .stream-card { flex: 1 1 0; min-width: 0; box-sizing: border-box; border: 1px solid #ccc; padding: 8px; border-radius: 8px; }
+    .stream-card img { max-width: 100%; max-height: 120px; height: auto; object-fit: contain; }
+    .stream-card .code-snippet { font-size: 0.7em; overflow-wrap: anywhere; }
+    .stream-logos { display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .stream-logos img { width: calc(50% - 3px); max-height: 80px; }
+    .fixes-heading { text-align: center; margin: 15px 0 8px; }
+    .fixes-container { display: flex; gap: 16px; align-items: stretch; }
+    .fix-card { flex: 1; padding: 14px 18px; border-radius: 8px; text-align: left; }
+    .fix-card h4 { margin: 0 0 8px; }
+    .fix-card p { margin: 0; }
+    .fix-card--randomized { background: #342a4d; border: 2px solid #bd93f9; }
+    .fix-card--randomized h4 { color: #bd93f9; }
+    .fix-card--probabilistic { background: #203b3b; border: 2px solid #50fa7b; }
+    .fix-card--probabilistic h4 { color: #50fa7b; }
+    .fix-card--topk { background: #203b3b; border: 2px solid #eccb39; }
+    .fix-card--topk h4 { color: #eccb39; }
+    .zipf-overview { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 12px; }
+    .zipf-overview p { margin: 0; }
+    .zipf-overview img { width: auto; max-width: 40%; max-height: 250px; object-fit: contain; margin: 0; }
+    .method-grid { display: flex; gap: 16px; align-items: stretch; }
+    .method-card { flex: 1; min-width: 0; padding: 10px 16px; border-radius: 8px; text-align: left; }
+    .method-card h3 { margin: 0 0 6px; font-size: 0.9em; }
+    .method-card ul { margin: 0; }
+    .method-card li { font-size: 0.78em; line-height: 1.25; margin-bottom: 5px; }
+    .method-card--counter { background: #342a4d; border: 2px solid #bd93f9; }
+    .method-card--counter h3 { color: #bd93f9; }
+    .method-card--sketch { background: #203b3b; border: 2px solid #50fa7b; }
+    .method-card--sketch h3 { color: #50fa7b; }
+
+    /* Interactive Stream Box Styling */
+    #title-stream-box, #exercise-stream-box {
+      width: 100%;
+      height: 100px;
+      background: #1e1e2e;
+      border: 2px solid #bd93f9;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .stream-btn {
+      font-size: 13px;
+      padding: 6px 14px;
+      margin-right: 8px;
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- Slide 1: Title -->
+      <section>
+        <h1>Counting in streams using the Elastic Sketch</h1>
+        <h3>Vinay Kumar B. R.</h3>
+        <div id="title-stream-box"></div>
+        <p style="margin-top: 30px;">Joint work with <br> Younes Ben Mazziane (U.of Avignon, France) & Othmane Marfoq (Meta)</p>
+        <p style="margin-top: 20px; color: #bd93f9;"><strong>Dept. of IEOR, IIT Bombay <br> Nov 4, 2026</strong></p>
+<img src=./Images/elastic_sketch/IITB_logo.svg alt="IIT Bombay Logo" style="width: 120px; margin-top: 10px;"><span> &emsp;&emsp;&emsp;&emsp;</span>
+        <img src=./Images/elastic_sketch/ieor50.jpeg alt="IEOR Logo" style="width: 120px; margin-top: 10px;">
+      </section>
+
+
+      <!-- Slide 2: Motivation -->
+<section>
+    <h2>Motivation: Real-World Streams</h2>
+    
+    <div class="stream-container">
+        <!-- Streaming Services -->
+        <div class="stream-card fragment">
+            <div class="icon" style="font-size: 24px;">🎬</div>
+            <h4>Streaming Services (Netflix, Instagram)</h4>
+            <div class="stream-logos">
+                <img src=./Images/elastic_sketch/insta_logo.jpeg alt="Instagram Logo">
+                <img src=./Images/elastic_sketch/netflix_logo.jpg alt="Netflix Logo">
+            </div>
+            <div class="code-snippet">
+                <code>User Clickstreams &amp; Log Events</code>
+            </div>
+        </div>
+        <!-- Assembly & Transactions -->
+        <div class="stream-card fragment">
+            <div class="icon" style="font-size: 24px;">📈💰📊</div>
+            <h4>Assembly line &amp; Financial transactions</h4>
+            <img src=./Images/elastic_sketch/assembly_line.gif alt="assembly line" style="margin-top: 10px;">
+            <div class="code-snippet">
+                <code>Sensor Signals &amp; Payments</code>
+            </div>
+        </div>
+                <!-- LLM tokenizers -->
+        <div class="stream-card fragment">
+            <div class="icon" style="font-size: 24px;">🤖</div>
+            <h4>LLM tokenizers</h4>
+            <img src=./Images/elastic_sketch/llm.gif alt="LLM tokenizers" style="margin-top: 10px;">
+            <div class="code-snippet">
+                <code>Learn frequency of words while tokenization</code>
+            </div>
+        </div>
+                <!-- Network Packet Tracing -->
+        <div class="stream-card fragment">
+            <div class="icon" style="font-size: 24px;">📡</div>
+            <h4>Network Packet Tracing</h4>
+            <img src=./Images/elastic_sketch/network_packet_flow.gif alt="network packets" style="margin-top: 10px;">
+            <div class="code-snippet">
+                <code>(SrcIP, DstIP, Bytes), DDoS attacks</code>
+            </div>
+        </div>
+    </div>
+    <br>
+    <h3 class="fragment" style="text-align: center;"><strong>Goal:</strong> Want to count events related to the streaming data.</h3>
+</section>
+
+
+      <!-- Slide 2: Stream Counting & JS Exercise -->
+      <section>
+        <h2>The Stream Counting Problem</h2>
+        <div class="box">
+          <p><strong>Audience Exercise:</strong> Keep an exact mental tally of arriving items!</p>
+          <div style="margin-top: 8px;">
+            <button class="stream-btn" style="background: #6272a4;" onclick="startStream(2)">Level 1</button>
+            <button class="stream-btn" style="background: #ff79c6;" onclick="startStream(5)">Level 2</button>
+            <button class="stream-btn" style="background: #ff5555;" onclick="stopStream()">Stop</button>
+            <button class="stream-btn" id="reveal-btn" style="background: #50fa7b; color: #282a36; opacity: 0.5; cursor: not-allowed;" onclick="revealCount()" disabled>Reveal Count</button>
+          </div>
+          <div id="exercise-stream-box">
+            <div id="exercise-stream-instruction" style="position: absolute; width: 100%; text-align: center; color: #6272a4; font-size: 16px;">
+              Click a button above to launch the stream!
+            </div>
+          </div>
+          <div id="count-result" style="margin-top: 10px; font-size: 18px; font-weight: bold; color: #f1fa8c; min-height: 28px;"> </div>
+        </div>
+        <ul style="margin-top: 15px;" class="fragment">
+          <li><strong>Massive Stream:</strong> Universe of items \(\mathcal{I}\) of size \(n_{\mathcal{I}}\).</li>
+          <li><strong>Resource Constraints:</strong> Memory budget \(m \ll n_{\mathcal{I}}\) with ultra-fast \(O(1)\) update time.</li>
+        </ul>
+            <br>
+    <h4 class="fragment" style="text-align: center;"><strong>Goal:</strong> Want to compute functions / statistics of events related to the streaming data with limited memory.</h4>
+      </section>
+
+<!-- Streaming model-->
+<section>
+<h2>Streaming Model</h2>
+<ul>
+<li>Universe of items <span style="color: #bd93f9;">\(\mathcal{I}\)</span> of size <span style="color: #bd93f9;">\(n_{\mathcal{I}}\)</span>.</li>
+<br>
+<li>Stream <span style="color: #8be9fd;">\(\mathbf{R} = (R_1, R_2, \dots, R_{t}, \dots)\)</span> where <span style="color: #8be9fd;">\(R_t \in \mathcal{I}\)</span>.</li>
+<br>
+<li>Probability vector <span style="color: #50fa7b;">\(p = (p_1, p_2, \dots, p_{n_{\mathcal{I}}})\)</span>, where <span style="color: #50fa7b;">\(p_i\)</span> is the probability of item <span style="color: #bd93f9;">\(i\)</span> in the stream.</li>
+<br>
+<li>Frequency vector <span style="color: #f1fa8c;">\(\mathbf{N}(t) = (N_1(t), N_2(t), \dots, N_{n_{\mathcal{I}}}(t))\)</span>, where <span style="color: #f1fa8c;">\(N_i(t)\)</span> is the number of occurrences of item <span style="color: #bd93f9;">\(i\)</span> in the stream up to time <span style="color: #ffb86c;">\(t\)</span>.</li>
+<br>
+</ul>
+<h4><strong>Goal:</strong> Find the frequency vector \(\mathbf{N}(t)\) or its functions (e.g., top-\(k\) items, heavy hitters, etc.) using limited memory \(m \ll n_{\mathcal{I}}\).</h4>
+
+<h4 class="fragment" style="text-align: center; margin-top: 15px;"><strong>Fact:</strong> To exactly find \(\mathbf{N}(t)\), we need \(m=\Omega(n_{\mathcal{I}})\) memory.</h4>
+</section>
+
+<!-- Approximate counting-->
+ <section>
+  <h2>Approximate Counting</h2>
+  <ul>
+    <li>Use sublinear memory <span style="color: #bd93f9;">\(m \ll n_{\mathcal{I}}\)</span> to maintain an approximate frequency vector \(\hat{\mathbf{N}}(t)\).</li>
+    <li>Guarantee: <span style="color: #f1fa8c;">\(|\hat{N}_i(t) - N_i(t)| \le \Delta \)</span> for all \(i\).</li>
+    <li>Approximation: Recovery up to some additive error.</li>
+  </ul>
+<h4 class="fragment" style="text-align: center; margin-top: 15px;"><strong>Known Fact:</strong> To find \(\mathbf{N}(t)\) up to an additive error using a deterministic algorithm, we need \(m=\Omega(n_{\mathcal{I}})\) memory.</h4>
+
+<div class="fragment" style="margin-top: 15px;">
+<h4 class="fixes-heading"><strong>Some fixes</strong></h4>
+<div class="fixes-container">
+  <div class="fix-card fix-card--topk">
+    <h4>Top-K methods</h4>
+    <p>Focus on maintaining accurate counts for the top-k items.</p>
+  </div>
+  <div class="fix-card fix-card--randomized">
+    <h4>Randomized algorithms</h4>
+    <p>Use randomization to reduce memory requirements.</p>
+  </div>
+  <div class="fix-card fix-card--probabilistic">
+    <h4>Probabilistic guarantees</h4>
+    <p>\(|\hat{N}_i(t) - N_i(t)| \le \epsilon t\) with probability \(1-\delta\).</p>
+  </div>
+</div>
+</section>
+
+
+<!-- Slide: Misra-Gries Algorithm & Interactive Eviction Demo -->
+<section style="font-family: system-ui, -apple-system, sans-serif; color: #f8f8f2; padding: 10px; box-sizing: border-box;">
+  
+  <style>
+    /* Keyframe Animations for Eviction & Insertion */
+    @keyframes shakeEvict {
+      0% { transform: translateX(0); background-color: #ff5555; }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+      100% { transform: translateX(0); }
+    }
+    
+    @keyframes pulseMatch {
+      0% { transform: scale(1); border-color: #50fa7b; }
+      50% { transform: scale(1.08); border-color: #50fa7b; background: #384049; }
+      100% { transform: scale(1); border-color: #44475a; }
+    }
+
+    .mg-slot {
+      flex: 1;
+      background: #282a36;
+      border: 2px solid #44475a;
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      transition: all 0.3s ease;
+      min-width: 90px;
+    }
+
+    .evict-active {
+      animation: shakeEvict 0.5s ease-in-out;
+      border-color: #ff5555 !important;
+    }
+
+    .match-active {
+      animation: pulseMatch 0.4s ease-in-out;
+    }
+
+    .mg-btn {
+      font-size: 12px;
+      padding: 6px 14px;
+      margin-right: 6px;
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      color: #ffffff;
+      transition: background 0.2s;
+    }
+  </style>
+
+  <h2 style="font-size: 1.25em; color: #f8f8f2; margin: 0 0 8px 0; text-transform: none;">Misra-Gries (1982): Counter-Based Algorithm</h2>
+<br>
+  <!-- Top Explanation Banner -->
+  <div style="background: #1e1e2e; border: 1px solid #bd93f9; border-radius: 8px; padding: 10px 14px; margin-bottom: 10px;">
+    <p style="font-size: 0.72em; line-height: 1.35; margin: 0; color: #f8f8f2;">
+      Identify <strong style="color: #f1fa8c;">top-\(k\)</strong> items.
+    </p>
+    <ul style="font-size: 1em; line-height: 1.3; margin: 4px 0 0 0; padding-left: 18px; color: #f8f8f2;">
+      <li><strong>Match:</strong> If item is in a slot \(\implies\) increment its counter.</li>
+      <li><strong>Empty Slot:</strong> If space remains \(\implies\) insert item with count 1.</li>
+      <li><strong style="color: #ff5555;">All Slots Full & New Item Arrives:</strong> Decrement <em>ALL</em> counters by 1 and evict any item reaching count 0!</li>
+    </ul>
+  </div>
+<br>
+  <!-- Simulation Control Panel -->
+  <div style="background: #282a36; border: 1px solid #44475a; border-radius: 8px; padding: 12px; box-sizing: border-box;">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <div>
+        <button class="mg-btn" style="background: #50fa7b; color: #1e1e2e;" onclick="mgPlay()">▶ Play</button>
+        <button class="mg-btn" style="background: #ffb86c; color: #1e1e2e;" onclick="mgPause()">⏸ Pause</button>
+        <button class="mg-btn" style="background: #8be9fd; color: #1e1e2e;" onclick="mgStep()">⏭ Step</button>
+        <button class="mg-btn" style="background: #ff5555;" onclick="mgReset()">↺ Reset</button>
+      </div>
+      <div style="font-size: 0.75em; color: #f1fa8c; font-weight: bold;">
+        Stream Length: <span id="mg-processed">0</span>
+      </div>
+    </div>
+
+    <!-- Incoming Stream Visualization Box -->
+    <div id="mg-stream-box" style="width: 100%; height: 60px; background: #1e1e2e; border: 1px solid #bd93f9; border-radius: 6px; position: relative; overflow: hidden; display: flex; align-items: center; margin-bottom: 12px;">
+      <div id="mg-stream-prompt" style="position: absolute; width: 100%; text-align: center; color: #6272a4; font-size: 13px;">
+        Click <strong>Play</strong> or <strong>Step</strong> to process incoming items!
+      </div>
+    </div>
+
+    <!-- Active Counters Display (k-1 = 3 Slots) -->
+    <div style="margin-bottom: 6px; font-size: 0.75em; color: #bd93f9; font-weight: bold; text-align: left;">
+      Active Counter Slots (\(k = 3\)):
+    </div>
+
+    <div id="mg-slots-container" style="display: flex; gap: 10px; justify-content: space-between;">
+      <!-- Slot 1 -->
+      <div id="slot-0" class="mg-slot">
+        <div style="font-size: 11px; color: #6272a4;">Slot 1</div>
+        <div class="slot-symbol" style="font-size: 28px; min-height: 34px;">—</div>
+        <div style="font-size: 18px; color: #f8f8f2;">Count: <span class="slot-count" style="color: #50fa7b; font-weight: bold;">0</span></div>
+      </div>
+      <!-- Slot 2 -->
+      <div id="slot-1" class="mg-slot">
+        <div style="font-size: 11px; color: #6272a4;">Slot 2</div>
+        <div class="slot-symbol" style="font-size: 28px; min-height: 34px;">—</div>
+        <div style="font-size: 18px; color: #f8f8f2;">Count: <span class="slot-count" style="color: #50fa7b; font-weight: bold;">0</span></div>
+      </div>
+      <!-- Slot 3 -->
+      <div id="slot-2" class="mg-slot">
+        <div style="font-size: 11px; color: #6272a4;">Slot 3</div>
+        <div class="slot-symbol" style="font-size: 28px; min-height: 34px;">—</div>
+        <div style="font-size: 18px; color: #f8f8f2;">Count: <span class="slot-count" style="color: #50fa7b; font-weight: bold;">0</span></div>
+      </div>
+    </div>
+
+    <!-- Event Status / Eviction Log Banner -->
+    <div id="mg-status-log" style="margin-top: 10px; font-size: 13px; font-weight: bold; color: #f1fa8c; min-height: 22px; text-align: center;">
+      Status: Ready
+    </div>
+
+  </div>
+
+  <!-- JavaScript Handler for Misra-Gries Simulation -->
+  <script>
+    (function() {
+      const maxSlots = 3; // k - 1 = 3 slots
+      let slots = [
+        { symbol: null, count: 0 },
+        { symbol: null, count: 0 },
+        { symbol: null, count: 0 }
+      ];
+      let processedCount = 0;
+      let timer = null;
+
+      const shapes = [
+        { symbol: '●', color: '#ff5555' }, // 0: Red Circle
+        { symbol: '■', color: '#8be9fd' }, // 1: Blue Square
+        { symbol: '▲', color: '#50fa7b' }, // 2: Green Triangle
+        { symbol: '★', color: '#f1fa8c' }, // 3: Yellow Star
+        { symbol: '◆', color: '#ff79c6' }  // 4: Pink Diamond
+      ];
+
+      window.mgProcessNext = function() {
+        const rand = Math.random();
+        let chosen;
+        if (rand < 0.4) chosen = shapes[0];       // 40% Circle
+        else if (rand < 0.7) chosen = shapes[1];  // 30% Square
+        else if (rand < 0.85) chosen = shapes[2]; // 15% Triangle
+        else if (rand < 0.93) chosen = shapes[3]; // 8% Star
+        else chosen = shapes[4];                  // 7% Diamond
+
+        processedCount++;
+        document.getElementById('mg-processed').innerText = processedCount;
+
+        // Hide prompt text
+        const prompt = document.getElementById('mg-stream-prompt');
+        if (prompt) prompt.style.display = 'none';
+
+        // Animate incoming item across top stream box
+        const box = document.getElementById('mg-stream-box');
+        const elem = document.createElement('span');
+        elem.innerText = chosen.symbol;
+        elem.style.position = 'absolute';
+        elem.style.right = '-30px';
+        elem.style.color = chosen.color;
+        elem.style.fontSize = '32px';
+        elem.style.transition = 'all 1.4s linear';
+        box.appendChild(elem);
+
+        setTimeout(() => { elem.style.right = '105%'; }, 20);
+        setTimeout(() => { if (elem.parentNode === box) box.removeChild(elem); }, 1500);
+
+        const statusDiv = document.getElementById('mg-status-log');
+        
+        // Remove animation CSS classes from prior turn
+        for (let i = 0; i < maxSlots; i++) {
+          const el = document.getElementById(`slot-${i}`);
+          if (el) el.classList.remove('evict-active', 'match-active');
+        }
+
+        // --- MISRA-GRIES ALGORITHM LOGIC ---
+        
+        // Case 1: Item already exists in a slot (Match!)
+        let matchIdx = slots.findIndex(s => s.symbol === chosen.symbol);
+        if (matchIdx !== -1) {
+          slots[matchIdx].count++;
+          statusDiv.innerHTML = `<span style="color:#50fa7b;">Matched ${chosen.symbol}! Incremented count to ${slots[matchIdx].count}.</span>`;
+          document.getElementById(`slot-${matchIdx}`).classList.add('match-active');
+          updateUI();
+          return;
+        }
+
+        // Case 2: Empty slot available (Insert!)
+        let emptyIdx = slots.findIndex(s => s.symbol === null);
+        if (emptyIdx !== -1) {
+          slots[emptyIdx] = { symbol: chosen.symbol, count: 1, color: chosen.color };
+          statusDiv.innerHTML = `<span style="color:#8be9fd;">Allocated Slot ${emptyIdx + 1} for new item ${chosen.symbol}.</span>`;
+          document.getElementById(`slot-${emptyIdx}`).classList.add('match-active');
+          updateUI();
+          return;
+        }
+
+        // Case 3: All slots full & item absent -> DECREMENT ALL & EVICT
+        let evictedItems = [];
+        for (let i = 0; i < maxSlots; i++) {
+          slots[i].count--;
+          document.getElementById(`slot-${i}`).classList.add('evict-active');
+          if (slots[i].count === 0) {
+            evictedItems.push(slots[i].symbol);
+            slots[i] = { symbol: null, count: 0 }; // Evict slot
+          }
+        }
+
+        if (evictedItems.length > 0) {
+          statusDiv.innerHTML = `<span style="color:#ff5555;">⚡ EVICTION! All slots decremented. Evicted: ${evictedItems.join(', ')}</span>`;
+        } else {
+          statusDiv.innerHTML = `<span style="color:#ffb86c;">⚡ All slots full! Decremented all counters by 1.</span>`;
+        }
+
+        updateUI();
+      };
+
+      function updateUI() {
+        for (let i = 0; i < maxSlots; i++) {
+          const slotEl = document.getElementById(`slot-${i}`);
+          if (!slotEl) continue;
+          const symEl = slotEl.querySelector('.slot-symbol');
+          const countEl = slotEl.querySelector('.slot-count');
+
+          if (slots[i].symbol !== null) {
+            symEl.innerText = slots[i].symbol;
+            symEl.style.color = slots[i].color || '#f8f8f2';
+            countEl.innerText = slots[i].count;
+          } else {
+            symEl.innerText = '—';
+            symEl.style.color = '#6272a4';
+            countEl.innerText = '0';
+          }
+        }
+      }
+
+      window.mgPlay = function() {
+        mgPause();
+        timer = setInterval(mgProcessNext, 1200);
+      };
+
+      window.mgPause = function() {
+        if (timer) clearInterval(timer);
+        timer = null;
+      };
+
+      window.mgStep = function() {
+        mgPause();
+        mgProcessNext();
+      };
+
+      window.mgReset = function() {
+        mgPause();
+        slots = [
+          { symbol: null, count: 0 },
+          { symbol: null, count: 0 },
+          { symbol: null, count: 0 }
+        ];
+        processedCount = 0;
+        document.getElementById('mg-processed').innerText = '0';
+        document.getElementById('mg-status-log').innerText = 'Status: Reset complete.';
+        const prompt = document.getElementById('mg-stream-prompt');
+        if (prompt) prompt.style.display = 'block';
+        
+        for (let i = 0; i < maxSlots; i++) {
+          const el = document.getElementById(`slot-${i}`);
+          if (el) el.classList.remove('evict-active', 'match-active');
+        }
+        updateUI();
+      };
+    })();
+  </script>
+</section>
+
+<!-- Slide: Misra-Gries Algorithm and Guarantees -->
+<section>
+    <h2 style="font-size: 1.25em; color: #f8f8f2; margin: 0 0 8px 0; text-transform: none;">Misra-Gries (1982): Counter-Based Algorithm</h2>
+<br>
+  <!-- Top Explanation Banner -->
+  <div style="background: #1e1e2e; border: 1px solid #bd93f9; border-radius: 8px; padding: 10px 14px; margin-bottom: 10px;">
+    <p style="font-size: 0.72em; line-height: 1.35; margin: 0; color: #f8f8f2;">
+      Identify <strong style="color: #f1fa8c;">top-\(k\)</strong> items.
+    </p>
+    <ul style="font-size: 1em; line-height: 1.3; margin: 4px 0 0 0; padding-left: 18px; color: #f8f8f2;">
+      <li><strong>Match:</strong> If item is in a slot \(\implies\) increment its counter.</li>
+      <li><strong>Empty Slot:</strong> If space remains \(\implies\) insert item with count 1.</li>
+      <li><strong style="color: #ff5555;">All Slots Full & New Item Arrives:</strong> Decrement <em>ALL</em> counters by 1 and evict any item reaching count 0!</li>
+    </ul>
+  </div>
+<br>
+
+  <div style="background: #1e1e2e; border: 1px solid #bd93f9; border-radius: 8px; padding: 10px 14px; margin-bottom: 10px;">
+    <p class="fragment" style="font-size: 0.72em; line-height: 1.35; margin: 0; color: #f8f8f2;">
+     <strong style="color: #f1fa8c;"> Some observations</strong>
+    </p>
+    <ul class="fragment" style="font-size: 1em; line-height: 1.3; margin: 4px 0 0 0; padding-left: 18px; color: #f8f8f2;">
+      <li><strong>Undercounts:</strong> The estimate never exceeds the true frequency.</li>
+    <li><strong>Estimate bound:</strong> For a stream of length \(t\), \(N_i - \frac{t}{k+1} \le \hat N_i \le N_i\).</li>
+    <li><strong>Not all counts are tracked:</strong> Only the \(k\) current candidates have counters; untracked items have estimate 0. </li>
+    <li><strong>Non-parallelizable:</strong> For two streams, non trivial merging is required.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- Slide: Count-Min Sketch (CMS) & 2D Array Simulation -->
+<section style="font-family: system-ui, -apple-system, sans-serif; color: #f8f8f2; padding: 16px; box-sizing: border-box;">
+
+  <style>
+    @keyframes cmsPulse {
+      0% { transform: scale(1); border-color: #bd93f9; }
+      50% { transform: scale(1.06); border-color: #f1fa8c; background: #44475a; }
+      100% { transform: scale(1); border-color: #44475a; }
+    }
+
+    .cms-cell {
+      flex: 1;
+      background: #1e1e2e;
+      border: 1px solid #44475a;
+      border-radius: 6px;
+      padding: 8px;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .cms-active {
+      animation: cmsPulse 0.45s ease-in-out;
+      border-color: #f1fa8c !important;
+      background: #383a59 !important;
+    }
+
+    .cms-btn {
+      font-size: 12px;
+      padding: 6px 14px;
+      margin-right: 8px;
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      color: #ffffff;
+      transition: background 0.2s;
+    }
+
+    .cms-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.72em;
+      text-align: center;
+      color: #f8f8f2;
+    }
+
+    .cms-table th {
+      padding: 5px;
+      border-bottom: 1px solid #44475a;
+      color: #bd93f9;
+      font-weight: bold;
+    }
+
+    .cms-table td {
+      padding: 5px;
+      border-bottom: 1px solid #343746;
+    }
+  </style>
+
+  <h2 style="font-size: 1.3em; color: #f8f8f2; margin: 0 0 14px 0; text-transform: none;">Count-Min Sketch (CMS): Sketching Algorithm (2005)</h2>
+
+  <!-- Side-by-Side Container: Algorithm Summary & Hash Mapping Table -->
+  <div style="display: flex; gap: 10px; margin-bottom: 16px; align-items: stretch; flex-wrap: wrap;">
+    
+    <!-- Left: Algorithm Concept Summary -->
+    <div style="flex: 1; min-width: 280px; background: #1e1e2e; border: 1px solid #bd93f9; border-radius: 8px; padding: 12px 16px;">
+      <h3 style="font-size: 0.85em; color: #bd93f9; margin: 0 0 8px 0; font-weight: bold;">Algorithm Overview</h3>
+      <p style="font-size: 0.75em; line-height: 1.4; margin: 0; color: #f8f8f2;">
+        Uses a 2D array \(C\) of size <strong style="color: #bd93f9;">\(d \times w\)</strong> counters driven by \(d\) independent hash functions \(h_1, \dots, h_d \in [w]\).
+      </p>
+      <ul style="font-size: 0.72em; line-height: 1.4; margin: 8px 0 0 0; padding-left: 18px; color: #f8f8f2;">
+        <li><strong>Update:</strong> For item \(x\), increment \(C[j, h_j(x)] \gets C[j, h_j(x)] + 1\) for all \(j \in [d]\).</li><br>
+        <li><strong>Point Query:</strong> \(\hat{N}_x = \min_{j=1 \dots d} C[j, h_j(x)]\).</li>
+      </ul>
+    </div>
+
+    <!-- Right: Hash Function Mapping Table -->
+    <div style="flex: 1; min-width: 280px; background: #282a36; border: 1px solid #44475a; border-radius: 8px; padding: 12px 16px;" class="fragment">
+      <h3 style="font-size: 0.65em; color: #f1fa8c; margin: 0 0 8px 0; font-weight: bold;">Hash Mappings \(h_j(\text{item}) \in \{0, 1, 2, 3\}\)</h3>
+      <table class="cms-table">
+        <thead>
+          <tr>
+            <th style="text-align: left;">Item</th>
+            <th  style="width: 60px; font-size: 14px; color: #50fa7b; font-weight: bold;">\(h_1\)</th>
+            <th  style="width: 60px; font-size: 14px; color: #8be9fd; font-weight: bold;">\(h_2\)</th>
+            <th  style="width: 60px; font-size: 14px; color: #ff79c6; font-weight: bold;">\(h_3\)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="text-align: left;"><span style="color:#ff5555; font-size: 14px;">●</span> Red Circle</td>
+            <td>1</td>
+            <td>3</td>
+            <td>0</td>
+          </tr>
+          <tr>
+            <td style="text-align: left;"><span style="color:#8be9fd; font-size: 14px;">■</span> Blue Square</td>
+            <td>0</td>
+            <td>1</td>
+            <td>2</td>
+          </tr>
+          <tr>
+            <td style="text-align: left;"><span style="color:#50fa7b; font-size: 14px;">▲</span> Green Triangle</td>
+            <td>2</td>
+            <td>0</td>
+            <td>3</td>
+          </tr>
+          <tr>
+            <td style="text-align: left;"><span style="color:#f1fa8c; font-size: 14px;">★</span> Yellow Star</td>
+            <td>3</td>
+            <td>2</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td style="text-align: left; border-bottom: none;"><span style="color:#ff79c6; font-size: 14px;">◆</span> Pink Diamond</td>
+            <td style="border-bottom: none;">1</td>
+            <td style="border-bottom: none;">0</td>
+            <td style="border-bottom: none;">2</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- Main Simulation Area -->
+  <div style="background: #282a36; border: 0px solid #44475a; border-radius: 8px; padding: 5px; box-sizing: border-box;" class="fragment">
+
+    <!-- Controls & Status -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <div>
+        <button class="cms-btn" style="background: #50fa7b; color: #1e1e2e;" onclick="cmsPlay()">▶ Play</button>
+        <button class="cms-btn" style="background: #ffb86c; color: #1e1e2e;" onclick="cmsPause()">⏸ Pause</button>
+        <button class="cms-btn" style="background: #8be9fd; color: #1e1e2e;" onclick="cmsStep()">⏭ Step</button>
+        <button class="cms-btn" style="background: #ff5555;" onclick="cmsReset()">↺ Reset</button>
+      </div>
+      <div style="font-size: 0.75em; color: #f1fa8c; font-weight: bold;">
+        Processed (\(N\)): <span id="cms-processed">0</span>
+      </div>
+    </div>
+
+    <!-- Incoming Stream Animation Container -->
+    <div id="cms-stream-box" style="width: 100%; height: 48px; background: #1e1e2e; border: 1px solid #bd93f9; border-radius: 6px; position: relative; overflow: hidden; display: flex; align-items: center; margin-bottom: 12px;">
+      <div id="cms-stream-prompt" style="position: absolute; width: 100%; text-align: center; color: #6272a4; font-size: 12px;">
+        Click <strong>Play</strong> or <strong>Step</strong> to stream items into Count-Min Sketch!
+      </div>
+    </div>
+
+    <!-- 2D Counter Array Grid (3 Rows x 4 Columns) 
+    <div style="font-size: 0.75em; color: #bd93f9; font-weight: bold; margin-bottom: 8px;">
+      2D Counter Matrix \(C[d \times w]\) (Depth \(d=3\), Width \(w=4\)):
+    </div> -->
+
+    <!-- Row 1: h1 -->
+    <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
+      <div style="width: 60px; font-size: 16px; color: #50fa7b; font-weight: bold;">Row 1 (\(h_1\))</div>
+      <div id="cell-0-0" class="cms-cell"><strong id="val-0-0" style="color:#f8f8f2;">0</strong></div>
+      <div id="cell-0-1" class="cms-cell"><strong id="val-0-1" style="color:#f8f8f2;">0</strong></div>
+      <div id="cell-0-2" class="cms-cell"><strong id="val-0-2" style="color:#f8f8f2;">0</strong></div>
+      <div id="cell-0-3" class="cms-cell"><strong id="val-0-3" style="color:#f8f8f2;">0</strong></div>
+    </div>
+
+    <!-- Row 2: h2 -->
+    <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
+      <div style="width: 60px; font-size: 16px; color: #8be9fd; font-weight: bold;">Row 2 (\(h_2\))</div>
+      <div id="cell-1-0" class="cms-cell"><strong id="val-1-0" style="color:#f8f8f2;">0</strong></div>
+      <div id="cell-1-1" class="cms-cell"><strong id="val-1-1" style="color:#f8f8f2;">0</strong></div>
+      <div id="cell-1-2" class="cms-cell"><strong id="val-1-2" style="color:#f8f8f2;">0</strong></div>
+      <div id="cell-1-3" class="cms-cell"><strong id="val-1-3" style="color:#f8f8f2;">0</strong></div>
+    </div>
+
+    <!-- Row 3: h3 -->
+    <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+      <div style="width: 60px; font-size: 16px; color: #ff79c6; font-weight: bold;">Row 3 (\(h_3\))</div>
+      <div id="cell-2-0" class="cms-cell"><strong id="val-2-0" style="color:#f8f8f2;">0</strong></div>
+      <div id="cell-2-1" class="cms-cell"><strong id="val-2-1" style="color:#f8f8f2;">0</strong></div>
+      <div id="cell-2-2" class="cms-cell"><strong id="val-2-2" style="color:#f8f8f2;">0</strong></div>
+      <div id="cell-2-3" class="cms-cell"><strong id="val-2-3" style="color:#f8f8f2;">0</strong></div>
+    </div>
+
+    <!-- Point Query Inspector -->
+    <div style="background: #1e1e2e; border: 1px solid #bd93f9; border-radius: 6px; padding: 8px 12px; font-size: 0.75em; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <span style="color: #f1fa8c; font-weight: bold;">Query Item:</span>
+        <select id="cms-query-select" style="background: #282a36; color: #f8f8f2; border: 1px solid #44475a; border-radius: 4px; padding: 4px 8px; font-size: 12px; margin-left: 6px;" onchange="cmsUpdateQuery()">
+          <option value="0">● Red Circle</option>
+          <option value="1">■ Blue Square</option>
+          <option value="2">▲ Green Triangle</option>
+          <option value="3">★ Yellow Star</option>
+          <option value="4">◆ Pink Diamond</option>
+        </select>
+      </div>
+      <div id="cms-query-result" style="font-weight: bold; color: #50fa7b;">
+        True Count: 0 | Estimate \( \hat{N} = \min(0,0,0) = 0\)
+      </div>
+    </div>
+
+  </div>
+
+  <!-- JavaScript Handler for Count-Min Sketch -->
+  <script>
+    (function() {
+      const d = 3, w = 4;
+      let grid = [
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0]
+      ];
+      let trueCounts = [0, 0, 0, 0, 0];
+      let processed = 0;
+      let timer = null;
+
+      const shapes = [
+        { symbol: '●', color: '#ff5555', h: [1, 3, 0] }, // 0
+        { symbol: '■', color: '#8be9fd', h: [0, 1, 2] }, // 1
+        { symbol: '▲', color: '#50fa7b', h: [2, 0, 3] }, // 2
+        { symbol: '★', color: '#f1fa8c', h: [3, 2, 1] }, // 3
+        { symbol: '◆', color: '#ff79c6', h: [1, 0, 2] }  // 4
+      ];
+
+      window.cmsProcessNext = function() {
+        const rand = Math.random();
+        let idx;
+        if (rand < 0.35) idx = 0;      // 35% Circle
+        else if (rand < 0.65) idx = 1; // 30% Square
+        else if (rand < 0.80) idx = 2; // 15% Triangle
+        else if (rand < 0.90) idx = 3; // 10% Star
+        else idx = 4;                  // 10% Diamond
+
+        const chosen = shapes[idx];
+        trueCounts[idx]++;
+        processed++;
+        document.getElementById('cms-processed').innerText = processed;
+
+        const prompt = document.getElementById('cms-stream-prompt');
+        if (prompt) prompt.style.display = 'none';
+
+        // Animate incoming item
+        const box = document.getElementById('cms-stream-box');
+        const elem = document.createElement('span');
+        elem.innerText = chosen.symbol;
+        elem.style.position = 'absolute';
+        elem.style.right = '-30px';
+        elem.style.color = chosen.color;
+        elem.style.fontSize = '28px';
+        elem.style.transition = 'all 1.3s linear';
+        box.appendChild(elem);
+
+        setTimeout(() => { elem.style.right = '105%'; }, 20);
+        setTimeout(() => { if (elem.parentNode === box) box.removeChild(elem); }, 1400);
+
+        // Clear active pulse classes
+        for (let r = 0; r < d; r++) {
+          for (let c = 0; c < w; c++) {
+            const cell = document.getElementById(`cell-${r}-${c}`);
+            if (cell) cell.classList.remove('cms-active');
+          }
+        }
+
+        // Increment 2D Counter Array & trigger pulse
+        for (let r = 0; r < d; r++) {
+          const col = chosen.h[r];
+          grid[r][col]++;
+          const cell = document.getElementById(`cell-${r}-${col}`);
+          if (cell) cell.classList.add('cms-active');
+        }
+
+        updateGridUI();
+        window.cmsUpdateQuery();
+      };
+
+      function updateGridUI() {
+        for (let r = 0; r < d; r++) {
+          for (let c = 0; c < w; c++) {
+            const valEl = document.getElementById(`val-${r}-${c}`);
+            if (valEl) valEl.innerText = grid[r][c];
+          }
+        }
+      }
+
+      window.cmsUpdateQuery = function() {
+        const select = document.getElementById('cms-query-select');
+        if (!select) return;
+        const idx = parseInt(select.value, 10);
+        const item = shapes[idx];
+
+        const r1 = grid[0][item.h[0]];
+        const r2 = grid[1][item.h[1]];
+        const r3 = grid[2][item.h[2]];
+        const est = Math.min(r1, r2, r3);
+        const trueVal = trueCounts[idx];
+
+        const resDiv = document.getElementById('cms-query-result');
+        let errorMsg = est > trueVal ? `<span style="color:#ff5555;"> (+${est - trueVal} collision error)</span>` : '';
+        resDiv.innerHTML = `True: <strong>${trueVal}</strong> | \( \hat{N} = \min(${r1}, ${r2}, ${r3}) = ${est}\)${errorMsg}`;
+        if (window.MathJax && MathJax.typesetPromise) {
+          MathJax.typesetPromise([resDiv]);
+        }
+      };
+
+      window.cmsPlay = function() {
+        cmsPause();
+        timer = setInterval(cmsProcessNext, 1100);
+      };
+
+      window.cmsPause = function() {
+        if (timer) clearInterval(timer);
+        timer = null;
+      };
+
+      window.cmsStep = function() {
+        cmsPause();
+        cmsProcessNext();
+      };
+
+      window.cmsReset = function() {
+        cmsPause();
+        grid = [
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+          [0, 0, 0, 0]
+        ];
+        trueCounts = [0, 0, 0, 0, 0];
+        processed = 0;
+        document.getElementById('cms-processed').innerText = '0';
+        const prompt = document.getElementById('cms-stream-prompt');
+        if (prompt) prompt.style.display = 'block';
+
+        for (let r = 0; r < d; r++) {
+          for (let c = 0; c < w; c++) {
+            const cell = document.getElementById(`cell-${r}-${c}`);
+            if (cell) cell.classList.remove('cms-active');
+          }
+        }
+        updateGridUI();
+        window.cmsUpdateQuery();
+      };
+    })();
+  </script>
+</section>
+
+
+
+
+
+
+
+<!-- Slide 3: Top-K & Memory Trade-Off -->
+<section>
+  <h2>Counter-Based vs. Sketch-Based Methods</h2>
+
+    <div class="method-grid fragment">
+    <div class="method-card method-card--counter">
+      <h3>Counter-Based Methods (Misra–Gries)</h3>
+      <ul>
+        <li>Deterministic algorithm</li>
+        <li>Accurate count estimates for top-\(k\) items using \(O(k)\) space.</li>
+        <li>Results in underestimates \(N_x-\frac{t}{k+1}\le \hat{N}_x\le N_x\)
+        <!-- <li><em>Limitations:</em> Expensive eviction logic; difficult to extend to deletions / turnstile updates.</li> -->
+      </ul>
+    </div>
+    <div class="method-card method-card--sketch">
+      <h3>Sketch-Based Methods (CMS)</h3>
+      <ul>
+        <li>Randomised algorithm</li>
+        <li>Sublinear memory \(m \ll n_{\mathcal{I}}\) where \(m=d\cdot w\) can be designed.</li>
+        <li><em>Trade-off:</em> Estimation errors arise from hash collisions. Results in overestimates.</li>
+        <!-- <li style="color: #ff8888;"><strong>Elephant pollution:</strong> Heavy flows inflate the estimates of colliding small "mice" flows.</li> -->
+      </ul>
+    </div>
+  </div><br>
+  <div class="zipf-overview fragment">
+    <p>Real-world streams are Zipfian: a few <em>"elephants"</em> account for most volume: 
+      \(p_i \propto \frac{1}{i^\alpha}\)
+    </p>
+    <br>
+    <img src="./Images/elastic_sketch/zipf_dist.png" alt="Zipf distribution">
+  </div>
+
+</section>
+
+
+      <!-- Slide 6: Elastic Sketch Architecture -->
+      <section data-auto-animate data-auto-animate-duration="1.2">
+        <h2>Elastic Sketch (2018): Two-Block Architecture </h2>
+        <p data-id="architecture-key-idea"><strong>Key idea:</strong> Isolate the elephant and the mice flows.</p>
+        <div class="flex-container fragment">
+          <div class="col box" data-id="heavy-part">
+            <h4 data-id="heavy-heading">Heavy Block (\(m_1\) buckets)</h4>
+            <p data-id="heavy-method">Use a counter-based algorithm to identify heavy items.</p>
+            <p class="fragment">Limitations: Address the undercounting problem.</p>
+          </div>
+          <div class="col box" data-id="light-part">
+            <h4 data-id="light-heading">Light Block (\(m_2\) counters)</h4>
+            <p data-id="light-description">Count-Min Sketch (\(d \times w\)) stores residual mouse flows.</p>
+          </div>
+        </div>
+      </section>
+
+      <section data-auto-animate data-auto-animate-duration="1.2">
+        <h2>Elastic Sketch: Two-Block Architecture</h2>
+        <p data-id="architecture-key-idea"><strong>Key idea:</strong> Isolate the elephant and the mice flows.</p>
+        <div class="flex-container">
+          <div class="col box" data-id="heavy-part">
+            <h4 data-id="heavy-heading">Heavy Block (\(m_1\) buckets)</h4>
+            <p data-id="heavy-method">An item \(i\) is mapped to bucket \(b\) by hash function \(\beta\).</p>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin: 16px 0;">
+              <div class="box" style="margin: 0;">Item \(i\)</div>
+              <span>\(\xrightarrow{\ \beta\ }\)</span>
+              <div class="box" style="margin: 0;">Bucket \(b\)</div>
+            </div>
+            <div class="box" style="margin: 0; text-align: center;">
+              <strong>Bucket \(b\) stores:</strong>
+              <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 8px;">
+                <div>
+                  <div class="box" style="margin: 0; padding: 8px 4px;">\(S_b\)</div>
+                  <small>Item</small>
+                </div>
+                <div>
+                  <div class="box" style="margin: 0; padding: 8px 4px;">\(V_b^+\)</div>
+                  <small>Positive counts</small>
+                </div>
+                <div>
+                  <div class="box" style="margin: 0; padding: 8px 4px;">\(V_b^-\)</div>
+                  <small>Negative counts</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col box" data-id="light-part">
+            <h4 data-id="light-heading">Light Block (\(m_2\) counters)</h4>
+            <p data-id="light-description">Count-Min Sketch (\(d \times w\)) stores residual mouse flows.</p>
+            <p style="font-size: 0.72em; margin: 8px 0 4px;">Count-Min Sketch counters \(C[j,k]\)</p>
+            <table class="cms-table" style="font-size: 0.72em;">
+              <thead>
+                <tr>
+                  <th rowspan="2"></th>
+                  <th colspan="4">Buckets</th>
+                </tr>
+                <tr>
+                  <th>1</th>
+                  <th>2</th>
+                  <th>\(\cdots\)</th>
+                  <th>\(w\)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">\(h_1\)</th>
+                  <td class="cms-cell">3</td>
+                  <td class="cms-cell">2</td>
+                  <td>\(\cdots\)</td>
+                  <td class="cms-cell">0</td>
+                </tr>
+                <tr>
+                  <th scope="row">\(h_2\)</th>
+                  <td class="cms-cell">2</td>
+                  <td class="cms-cell">1</td>
+                  <td>\(\cdots\)</td>
+                  <td class="cms-cell">4</td>
+                </tr>
+                <tr>
+                  <th scope="row">\(\vdots\)</th>
+                  <td colspan="1">\(\vdots\)</td>
+                  <td colspan="1">\(\vdots\)</td>
+                  <td colspan="1">\(\ddots\)</td>
+                  <td colspan="1">\(\vdots\)</td>
+                </tr>
+                <tr>
+                  <th scope="row">\(h_d\)</th>
+                  <td class="cms-cell">3</td>
+                  <td class="cms-cell">5</td>
+                  <td>\(\cdots\)</td>
+                  <td class="cms-cell">6</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="box fragment" data-id="architecture-takeaway" style="margin-top: 15px; text-align: center;">
+            <p> <em>\(\hat N_i(t) \triangleq I\left( i\in Heavy \right) V^{+}_{\beta(i)} (t) + \min_{\ell\in [d]} Y_{\ell,h_{\ell}(i)} (t).\)</em></p>
+          <p><em>Elephants stay in Heavy Part; evicted mice flow into Light Part!</em></p>
+        </div>
+      </section>
+
+
+      
+
+<!-- Slide: Heavy Guardian / Heavy-Light Bucket Update Logic -->
+<section data-auto-animate data-auto-animate-duration="1.2" style="font-family: system-ui, -apple-system, sans-serif; color: #f8f8f2; padding: 20px; box-sizing: border-box; text-align: left;">
+
+  <h2 style="font-size: 1.3em; color: #f8f8f2; margin: 0 0 20px 0; text-align: center;">
+    Heavy Block Update Logic
+  </h2>
+<br>
+  <div data-id="heavy-update-diagram">
+  <!-- Top Row: Incoming Item -> Bucket Table -> Conditional Branching -->
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 24px;">
+
+    <!-- 1. Incoming Item -->
+    <div style="text-align: center; flex: 0 0 120px;">
+      <div style="font-size: 0.8em; font-weight: bold; margin-bottom: 8px; color: #f8f8f2;">Incoming item</div>
+      <div style="background: #1e1e2e; border: 2px solid #8be9fd; border-radius: 12px; padding: 12px 18px; display: inline-block;">
+        <span style="font-size: 1.5em; color: #f8f8f2; font-style: italic;">x</span>
+      </div>
+      <div style="font-size: 0.85em; color: #8be9fd; margin-top: 8px; font-weight: bold;">
+        \(b = \beta(x)\)
+      </div>
+    </div>
+
+    <!-- Arrow to Bucket -->
+    <div style="font-size: 1.8em; color: #bd93f9;">➔</div>
+
+    <!-- 2. Bucket S_b Card -->
+    <div style="flex: 1; max-width: 320px; background: #1e1e2e; border: 2px solid #8be9fd; border-radius: 10px; padding: 10px; text-align: center;">
+      <div style="font-size: 1.1em; color: #8be9fd; font-weight: bold; margin-bottom: 6px;">\(S_b\)</div>
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.8em; background: #282a36; border-radius: 6px; overflow: hidden;">
+        <thead>
+          <tr style="background: #0044cc; color: #ffffff;">
+            <th style="padding: 6px; border: 1px solid #44475a; width: 40%;">\(S_b\)</th>
+            <th style="padding: 6px; border: 1px solid #44475a; width: 30%;">\(V_b^+\)</th>
+            <th style="padding: 6px; border: 1px solid #44475a; width: 30%;">\(V_b^-\)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding: 8px 4px; font-size: 0.72em; color: #f8f8f2; border: 1px solid #44475a; line-height: 1.2;">
+              id of the currently elected item
+            </td>
+            <td style="border: 1px solid #44475a;"></td>
+            <td style="border: 1px solid #44475a;"></td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="font-size: 0.75em; color: #8be9fd; margin-top: 6px; font-weight: bold;">
+        Bucket contents: \(id, V_b^+, V_b^-\)
+      </div>
+    </div>
+
+    <!-- Split Arrows -->
+    <div style="display: flex; flex-direction: column; justify-content: space-around; height: 110px; font-size: 1.4em;">
+      <span style="color: #50fa7b; transform: rotate(-20deg);">➔</span>
+      <span style="color: #ff5555; transform: rotate(20deg);">➔</span>
+    </div>
+
+    <!-- 3. Right Branch Cases -->
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 12px;">
+      <!-- Case 1: Green -->
+      <div style="background: #1b382b; border: 2px solid #50fa7b; border-radius: 10px; padding: 8px 12px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+          <span style="background: #50fa7b; color: #1e1e2e; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.75em;">1</span>
+          <span style="font-size: 0.85em; font-weight: bold; color: #50fa7b;">If \(x = id\)</span>
+        </div>
+        <div style="background: #282a36; border: 1px solid #50fa7b; border-radius: 6px; padding: 6px; text-align: center; font-size: 0.85em; color: #f8f8f2;">
+          \(V_b^+ \leftarrow V_b^+ + 1\)
+        </div>
+      </div>
+
+      <!-- Case 2: Red -->
+      <div style="background: #3a1c22; border: 2px solid #ff5555; border-radius: 10px; padding: 8px 12px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+          <span style="background: #ff5555; color: #ffffff; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.75em;">2</span>
+          <span style="font-size: 0.85em; font-weight: bold; color: #ff5555;">If \(x \neq id\)</span>
+        </div>
+        <div style="background: #282a36; border: 1px solid #ff5555; border-radius: 6px; padding: 6px; text-align: center; font-size: 0.85em; color: #f8f8f2;">
+          \(V_b^- \leftarrow V_b^- + 1\)
+        </div>
+      </div>
+    </div>
+
+  </div>
+<br>
+  <!-- Bottom Row: Comparison & Light Block Eviction -->
+  <div style="display: flex; align-items: stretch; justify-content: center; gap: 20px; position: relative;">
+
+    <!-- Left: Compare Box -->
+    <div style="flex: 0 1 58%; max-width: 58%; background: #1e1e2e; border: 2px solid #8be9fd; border-radius: 10px; padding: 5px 5px;">
+      <div style="font-size: 0.9em; font-weight: bold; color: #8be9fd; text-align: center; margin-bottom: 10px; border-bottom: 1px solid #44475a; padding-bottom: 6px;">
+        Compare \(V_b^-\) with \(\lambda V_b^+\)
+      </div>
+      <div style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; font-size: 0.82em;">
+        <span style="background: #118833; color: #ffffff; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold;">✓</span>
+        <span style="color: #50fa7b; font-weight: bold;">If \(V_b^- \le \lambda V_b^+\):</span>
+        <span style="color: #f8f8f2;">keep current \(id\)</span>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; font-size: 0.82em;">
+        <span style="background: #cc2222; color: #ffffff; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold;">✕</span>
+        <span style="color: #ff5555; font-weight: bold;">If \(V_b^- > \lambda V_b^+\):</span>
+        <span style="color: #f8f8f2;">\(x\) replaces current \(id\)</span>
+      </div>
+    </div>
+
+    <!-- Curved Arrow Connector (SVG) -->
+    <div style="flex: 0 0 60px; display: flex; align-items: flex-end; justify-content: center;">
+      <svg width="60" height="60" viewBox="0 0 60 60">
+        <path d="M 4 43 Q 32 42 54 23" fill="none" stroke="#eaf1fb" stroke-width="3" marker-end="url(#arrowhead)"/>
+        <defs>
+          <marker id="arrowhead" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#eaf1fb"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+
+    <!-- Right: Light Block Box -->
+    <div style="flex: 0 0 auto; align-self: center; background: #eaf1fb; border: 2px solid #4768b8; border-radius: 2px; padding: 8px 12px; display: flex; align-items: center; justify-content: center; text-align: center;">
+      <div style="font-size: 0.6em; font-weight: bold; color: #212155; line-height: 1.4;">
+        \((S_b, V_b^+)\) sent to<br>Light Block
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- Slide: Heavy Guardian / Heavy-Light Bucket Update Logic -->
+<section data-auto-animate data-auto-animate-duration="1.2" style="font-family: system-ui, -apple-system, sans-serif; color: #f8f8f2; padding: 20px; box-sizing: border-box; text-align: left;">
+
+  <h2 style="font-size: 1.3em; color: #f8f8f2; margin: 0 0 20px 0; text-align: center;">
+    Elastic Sketch algorithm
+  </h2>
+<div style="display: flex; align-items: flex-start; gap: 20px;">
+  <div class="col" style="flex: 0 0 28%; padding: 0; font-size: 0.78em;">
+    <br>
+<br>
+<br>
+
+    <strong>Heavy block</strong>:
+    <ul>
+      <li>\(m_1\) buckets</li>
+      <li>Hash function: \(\beta:\mathcal{I}\to [m_1]\)</li>
+      <li>Eviction threshold: \(\lambda\)</li>
+    </ul>
+    <br><br><br><br><br><br>
+    <strong>Light block</strong>:
+    <ul>
+      <li>Count-Min Sketch with \(d\) rows and \(w\) columns</li>
+      <li>Hash functions: \(h_1,\dots,h_d:\mathcal{I}\to [w]\)</li>
+    </ul>
+  </div>
+  <div class="col" data-id="heavy-update-diagram" style="flex: 1; min-width: 0; padding: 0; font-size: 0.78em;">
+<!-- Top Row: Incoming Item -> Bucket Table -> Conditional Branching -->
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 24px;">
+
+    <!-- 1. Incoming Item -->
+    <div style="text-align: center; flex: 0 0 120px;">
+      <div style="font-size: 0.8em; font-weight: bold; margin-bottom: 8px; color: #f8f8f2;">Incoming item</div>
+      <div style="background: #1e1e2e; border: 2px solid #8be9fd; border-radius: 12px; padding: 12px 18px; display: inline-block;">
+        <span style="font-size: 1.5em; color: #f8f8f2; font-style: italic;">x</span>
+      </div>
+      <div style="font-size: 0.85em; color: #8be9fd; margin-top: 8px; font-weight: bold;">
+        \(b = \beta(x)\)
+      </div>
+    </div>
+
+    <!-- Arrow to Bucket -->
+    <div style="font-size: 1.8em; color: #bd93f9;">➔</div>
+
+    <!-- 2. Bucket S_b Card -->
+    <div style="flex: 1; max-width: 320px; background: #1e1e2e; border: 2px solid #8be9fd; border-radius: 10px; padding: 10px; text-align: center;">
+      <div style="font-size: 1.1em; color: #8be9fd; font-weight: bold; margin-bottom: 6px;">\(S_b\)</div>
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.8em; background: #282a36; border-radius: 6px; overflow: hidden;">
+        <thead>
+          <tr style="background: #0044cc; color: #ffffff;">
+            <th style="padding: 6px; border: 1px solid #44475a; width: 40%;">\(S_b\)</th>
+            <th style="padding: 6px; border: 1px solid #44475a; width: 30%;">\(V_b^+\)</th>
+            <th style="padding: 6px; border: 1px solid #44475a; width: 30%;">\(V_b^-\)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding: 8px 4px; font-size: 0.72em; color: #f8f8f2; border: 1px solid #44475a; line-height: 1.2;">
+              id of the currently elected item
+            </td>
+            <td style="border: 1px solid #44475a;"></td>
+            <td style="border: 1px solid #44475a;"></td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="font-size: 0.75em; color: #8be9fd; margin-top: 6px; font-weight: bold;">
+        Bucket contents: \(id, V_b^+, V_b^-\)
+      </div>
+    </div>
+
+    <!-- Split Arrows -->
+    <div style="display: flex; flex-direction: column; justify-content: space-around; height: 110px; font-size: 1.4em;">
+      <span style="color: #50fa7b; transform: rotate(-20deg);">➔</span>
+      <span style="color: #ff5555; transform: rotate(20deg);">➔</span>
+    </div>
+
+    <!-- 3. Right Branch Cases -->
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 12px;">
+      <!-- Case 1: Green -->
+      <div style="background: #1b382b; border: 2px solid #50fa7b; border-radius: 10px; padding: 8px 12px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+          <span style="background: #50fa7b; color: #1e1e2e; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.75em;">1</span>
+          <span style="font-size: 0.85em; font-weight: bold; color: #50fa7b;">If \(x = id\)</span>
+        </div>
+        <div style="background: #282a36; border: 1px solid #50fa7b; border-radius: 6px; padding: 6px; text-align: center; font-size: 0.85em; color: #f8f8f2;">
+          \(V_b^+ \leftarrow V_b^+ + 1\)
+        </div>
+      </div>
+
+      <!-- Case 2: Red -->
+      <div style="background: #3a1c22; border: 2px solid #ff5555; border-radius: 10px; padding: 8px 12px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+          <span style="background: #ff5555; color: #ffffff; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.75em;">2</span>
+          <span style="font-size: 0.85em; font-weight: bold; color: #ff5555;">If \(x \neq id\)</span>
+        </div>
+        <div style="background: #282a36; border: 1px solid #ff5555; border-radius: 6px; padding: 6px; text-align: center; font-size: 0.85em; color: #f8f8f2;">
+          \(V_b^- \leftarrow V_b^- + 1\)
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <!-- Bottom Row: Comparison & Light Block Eviction -->
+  <div style="display: flex; align-items: stretch; justify-content: center; gap: 20px; position: relative;">
+
+    <!-- Left: Compare Box -->
+    <div style="flex: 0 1 58%; max-width: 58%; background: #1e1e2e; border: 2px solid #8be9fd; border-radius: 10px; padding: 5px 5px;">
+      <div style="font-size: 0.9em; font-weight: bold; color: #8be9fd; text-align: center; margin-bottom: 10px; border-bottom: 1px solid #44475a; padding-bottom: 6px;">
+        Compare \(V_b^-\) with \(\lambda V_b^+\)
+      </div>
+      <div style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; font-size: 0.82em;">
+        <span style="background: #118833; color: #ffffff; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold;">✓</span>
+        <span style="color: #50fa7b; font-weight: bold;">If \(V_b^- \le \lambda V_b^+\):</span>
+        <span style="color: #f8f8f2;">keep current \(id\)</span>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; font-size: 0.82em;">
+        <span style="background: #cc2222; color: #ffffff; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold;">✕</span>
+        <span style="color: #ff5555; font-weight: bold;">If \(V_b^- > \lambda V_b^+\):</span>
+        <span style="color: #f8f8f2;">\(x\) replaces current \(id\)</span>
+      </div>
+    </div>
+
+    <!-- Curved Arrow Connector (SVG) -->
+    <div style="flex: 0 0 60px; display: flex; align-items: flex-end; justify-content: center;">
+      <svg width="60" height="60" viewBox="0 0 60 60">
+        <path d="M 4 43 Q 32 42 54 23" fill="none" stroke="#eaf1fb" stroke-width="3" marker-end="url(#arrowhead)"/>
+        <defs>
+          <marker id="arrowhead" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#eaf1fb"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+
+    <!-- Right: Light Block Box -->
+    <div style="flex: 0 0 auto; align-self: center; background: #eaf1fb; border: 2px solid #4768b8; border-radius: 2px; padding: 8px 12px; display: flex; align-items: center; justify-content: center; text-align: center;">
+      <div style="font-size: 0.6em; font-weight: bold; color: #212155; line-height: 1.4;">
+        \((S_b, V_b^+)\) sent to<br>Light Block
+      </div>
+    </div>
+  </div>
+  <table class="cms-table" style="font-size: 0.72em;">
+              <thead>
+                <tr>
+                  <th rowspan="2"></th>
+                  <th colspan="4">Buckets</th>
+                </tr>
+                <tr>
+                  <th>1</th>
+                  <th>2</th>
+                  <th>\(\cdots\)</th>
+                  <th>\(w\)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">\(h_1\)</th>
+                  <td class="cms-cell">3</td>
+                  <td class="cms-cell">2</td>
+                  <td>\(\cdots\)</td>
+                  <td class="cms-cell">0</td>
+                </tr>
+                <tr>
+                  <th scope="row">\(h_2\)</th>
+                  <td class="cms-cell">2</td>
+                  <td class="cms-cell">1</td>
+                  <td>\(\cdots\)</td>
+                  <td class="cms-cell">4</td>
+                </tr>
+                <tr>
+                  <th scope="row">\(\vdots\)</th>
+                  <td colspan="1">\(\vdots\)</td>
+                  <td colspan="1">\(\vdots\)</td>
+                  <td colspan="1">\(\ddots\)</td>
+                  <td colspan="1">\(\vdots\)</td>
+                </tr>
+                <tr>
+                  <th scope="row">\(h_d\)</th>
+                  <td class="cms-cell">3</td>
+                  <td class="cms-cell">5</td>
+                  <td>\(\cdots\)</td>
+                  <td class="cms-cell">6</td>
+                </tr>
+              </tbody>
+            </table>
+</div>
+</div>
+
+</section>
+
+
+<!-- Slide: Elastic Sketch Simulation -->
+<section>
+  <style>
+    @keyframes esPulse {
+      0% { transform: scale(1); border-color: #44475a; }
+      50% { transform: scale(1.05); border-color: #f1fa8c; background: #383a59; }
+      100% { transform: scale(1); border-color: #44475a; }
+    }
+    .es-parameters { margin: 0 0 5px; color: #f1fa8c; font-size: 0.68em; }
+    .es-hash-table { width: 100%; margin: 0 0 7px; border-collapse: collapse; table-layout: fixed; color: #f8f8f2; font-size: 0.52em; line-height: 1.15; }
+    .es-hash-table th, .es-hash-table td { padding: 2px 5px; border-bottom: 1px solid #44475a; text-align: center; }
+    .es-hash-table th { color: #bd93f9; font-weight: bold; }
+    .es-hash-table th:first-child, .es-hash-table td:first-child { width: 28%; text-align: left; }
+    .es-controls { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .es-btn { border: 0; border-radius: 4px; padding: 5px 10px; margin-right: 4px; font-size: 12px; font-weight: bold; cursor: pointer; }
+    .es-stream-box { height: 40px; margin-bottom: 8px; position: relative; overflow: hidden; display: flex; align-items: center; background: #1e1e2e; border: 1px solid #bd93f9; border-radius: 6px; }
+    .es-workspace { display: grid; grid-template-columns: minmax(270px, 1.25fr) minmax(0, 0.75fr); gap: 10px; align-items: start; }
+    .es-panel { min-width: 0; padding: 8px; background: #282a36; border: 1px solid #44475a; border-radius: 6px; }
+    .es-panel-title { margin-bottom: 6px; color: #bd93f9; font-size: 0.68em; font-weight: bold; }
+    .es-heavy-grid { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 4px; align-items: stretch; }
+    .es-bucket-label { display: flex; align-items: center; color: #8be9fd; font-size: 0.52em; font-weight: bold; }
+    .es-bucket { margin: 0; padding: 4px; background: #1e1e2e; border: 1px solid #44475a; border-radius: 5px; }
+    .es-bucket-values { display: grid; grid-template-columns: minmax(0, 1.3fr) repeat(2, minmax(58px, 1fr)); gap: 4px; text-align: center; font-size: 0.75em; }
+    .es-bucket-values span { display: flex; align-items: center; justify-content: center; min-height: 28px; box-sizing: border-box; padding: 2px 3px; background: #282a36; border-radius: 3px; line-height: 1; }
+    .es-bucket-values sup { position: relative; top: -0.2em; font-size: 0.7em; line-height: 0; }
+    .es-grid { display: grid; grid-template-columns: 36px repeat(4, minmax(0, 1fr)); gap: 3px; align-items: stretch; }
+    .es-row-label, .es-cell { display: flex; align-items: center; justify-content: center; min-height: 28px; border-radius: 4px; font-size: 0.62em; }
+    .es-row-label { color: #8be9fd; font-size: 0.48em; font-weight: bold; }
+    .es-cell { background: #1e1e2e; border: 1px solid #44475a; transition: background 0.2s ease; }
+    .es-active { animation: esPulse 0.45s ease-in-out; border-color: #f1fa8c !important; background: #383a59 !important; }
+    .es-query { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; padding: 6px 8px; background: #1e1e2e; border: 1px solid #bd93f9; border-radius: 5px; font-size: 0.59em; }
+    .es-status { min-height: 20px; margin-top: 6px; color: #f1fa8c; font-size: 0.58em; text-align: center; }
+    @media (max-width: 700px) { .es-workspace { grid-template-columns: 1fr; } .es-query { align-items: flex-start; flex-direction: column; } }
+  </style>
+
+  <h2>Elastic Sketch: Simulation</h2>
+  <p class="es-parameters">Parameters: Heavy block \(m_1=2\) buckets; Light CMS \(m_2=12\) counters \((d=3,w=4)\); threshold \(\lambda=1\).</p>
+  <table class="es-hash-table" aria-label="Elastic Sketch hash function mappings">
+    <thead><tr><th>Item</th><th>\(\beta\)</th><th>\(h_1\)</th><th>\(h_2\)</th><th>\(h_3\)</th></tr></thead>
+    <tbody>
+      <tr><td><span style="color:#ff5555;">●</span> Red Circle</td><td>0</td><td>1</td><td>3</td><td>0</td></tr>
+      <tr><td><span style="color:#8be9fd;">■</span> Blue Square</td><td>1</td><td>0</td><td>1</td><td>2</td></tr>
+      <tr><td><span style="color:#50fa7b;">▲</span> Green Triangle</td><td>0</td><td>2</td><td>0</td><td>3</td></tr>
+      <tr><td><span style="color:#f1fa8c;">★</span> Yellow Star</td><td>1</td><td>3</td><td>2</td><td>1</td></tr>
+      <tr><td><span style="color:#ff79c6;">◆</span> Pink Diamond</td><td>0</td><td>1</td><td>0</td><td>2</td></tr>
+    </tbody>
+  </table>
+
+  <div class="es-controls">
+    <div>
+      <button class="es-btn" style="background:#50fa7b;color:#1e1e2e;" onclick="esPlay()">▶ Play</button>
+      <button class="es-btn" style="background:#ffb86c;color:#1e1e2e;" onclick="esPause()">⏸ Pause</button>
+      <button class="es-btn" style="background:#8be9fd;color:#1e1e2e;" onclick="esStep()">⏭ Step</button>
+      <button class="es-btn" style="background:#ff5555;color:#fff;" onclick="esReset()">↺ Reset</button>
+    </div>
+    <div style="font-size:0.65em;color:#f1fa8c;font-weight:bold;">Processed: <span id="es-processed">0</span></div>
+  </div>
+
+  <div id="es-stream-box" class="es-stream-box">
+    <div id="es-stream-prompt" style="position:absolute;width:100%;text-align:center;color:#6272a4;font-size:12px;">Click Play or Step to send items through both blocks.</div>
+  </div>
+
+  <div class="es-workspace">
+    <div class="es-panel">
+      <div class="es-panel-title">Heavy block: \(m_1=2\) buckets</div>
+      <div class="es-heavy-grid">
+        <div class="es-bucket-label">Bucket 0</div>
+        <div id="es-bucket-0" class="es-bucket es-bucket-values"><span>Item: <b id="es-id-0">—</b></span><span>V<sup>+</sup>: <b id="es-plus-0">0</b></span><span>V<sup>−</sup>: <b id="es-minus-0">0</b></span></div>
+        <div class="es-bucket-label">Bucket 1</div>
+        <div id="es-bucket-1" class="es-bucket es-bucket-values"><span>Item: <b id="es-id-1">—</b></span><span>V<sup>+</sup>: <b id="es-plus-1">0</b></span><span>V<sup>−</sup>: <b id="es-minus-1">0</b></span></div>
+      </div>
+    </div>
+
+    <div class="es-panel">
+      <div class="es-panel-title">Light block: Count-Min Sketch \((d=3,w=4)\)</div>
+      <div class="es-grid">
+        <div class="es-row-label">\(h_1\)</div>
+        <div id="es-cell-0-0" class="es-cell">0</div><div id="es-cell-0-1" class="es-cell">0</div><div id="es-cell-0-2" class="es-cell">0</div><div id="es-cell-0-3" class="es-cell">0</div>
+        <div class="es-row-label">\(h_2\)</div>
+        <div id="es-cell-1-0" class="es-cell">0</div><div id="es-cell-1-1" class="es-cell">0</div><div id="es-cell-1-2" class="es-cell">0</div><div id="es-cell-1-3" class="es-cell">0</div>
+        <div class="es-row-label">\(h_3\)</div>
+        <div id="es-cell-2-0" class="es-cell">0</div><div id="es-cell-2-1" class="es-cell">0</div><div id="es-cell-2-2" class="es-cell">0</div><div id="es-cell-2-3" class="es-cell">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="es-query">
+    <label for="es-query-select"><strong style="color:#f1fa8c;">Query item:</strong>
+      <select id="es-query-select" onchange="esUpdateQuery()" style="background:#282a36;color:#f8f8f2;border:1px solid #44475a;border-radius:4px;padding:3px;">
+        <option value="0">● Red Circle</option><option value="1">■ Blue Square</option><option value="2">▲ Green Triangle</option><option value="3">★ Yellow Star</option><option value="4">◆ Pink Diamond</option>
+      </select>
+    </label>
+    <div id="es-query-result">True: 0 | CMS: 0 + Heavy: 0 = Estimate: 0</div>
+  </div>
+  <div id="es-status" class="es-status">Status: Ready</div>
+
+  <script>
+    (function() {
+      const d = 3;
+      const w = 4;
+      const lambda = 1;
+      const shapes = [
+        { symbol: '●', color: '#ff5555', beta: 0, h: [1, 3, 0] },
+        { symbol: '■', color: '#8be9fd', beta: 1, h: [0, 1, 2] },
+        { symbol: '▲', color: '#50fa7b', beta: 0, h: [2, 0, 3] },
+        { symbol: '★', color: '#f1fa8c', beta: 1, h: [3, 2, 1] },
+        { symbol: '◆', color: '#ff79c6', beta: 0, h: [1, 0, 2] }
+      ];
+      const probabilities = [0.35, 0.30, 0.15, 0.10, 0.10];
+      let buckets = [{ id: null, plus: 0, minus: 0 }, { id: null, plus: 0, minus: 0 }];
+      let cms = Array.from({ length: d }, () => Array(w).fill(0));
+      let trueCounts = Array(shapes.length).fill(0);
+      let processed = 0;
+      let timer = null;
+
+      function chooseItem() {
+        const random = Math.random();
+        let cumulative = 0;
+        for (let index = 0; index < probabilities.length; index++) {
+          cumulative += probabilities[index];
+          if (random < cumulative) return index;
+        }
+        return shapes.length - 1;
+      }
+
+      function clearActive() {
+        document.querySelectorAll('.es-cell.es-active, .es-bucket.es-active').forEach(element => element.classList.remove('es-active'));
+      }
+
+      function addToCms(itemIndex, amount) {
+        const item = shapes[itemIndex];
+        for (let row = 0; row < d; row++) {
+          const column = item.h[row];
+          cms[row][column] += amount;
+          document.getElementById(`es-cell-${row}-${column}`).classList.add('es-active');
+        }
+      }
+
+      function updateUI() {
+        for (let bucketIndex = 0; bucketIndex < buckets.length; bucketIndex++) {
+          const bucket = buckets[bucketIndex];
+          document.getElementById(`es-id-${bucketIndex}`).innerText = bucket.id === null ? '—' : shapes[bucket.id].symbol;
+          document.getElementById(`es-plus-${bucketIndex}`).innerText = bucket.plus;
+          document.getElementById(`es-minus-${bucketIndex}`).innerText = bucket.minus;
+        }
+        for (let row = 0; row < d; row++) {
+          for (let column = 0; column < w; column++) {
+            document.getElementById(`es-cell-${row}-${column}`).innerText = cms[row][column];
+          }
+        }
+      }
+
+      function animateIncoming(item) {
+        const box = document.getElementById('es-stream-box');
+        const prompt = document.getElementById('es-stream-prompt');
+        if (prompt) prompt.style.display = 'none';
+        const element = document.createElement('span');
+        element.className = 'es-stream-item';
+        element.innerText = item.symbol;
+        element.style.position = 'absolute';
+        element.style.right = '-30px';
+        element.style.color = item.color;
+        element.style.fontSize = '28px';
+        element.style.transition = 'right 1.2s linear';
+        box.appendChild(element);
+        setTimeout(() => { element.style.right = '105%'; }, 20);
+        setTimeout(() => { if (element.parentNode === box) box.removeChild(element); }, 1300);
+      }
+
+      window.esProcessNext = function() {
+        const itemIndex = chooseItem();
+        const item = shapes[itemIndex];
+        const bucketIndex = item.beta;
+        const bucket = buckets[bucketIndex];
+        let message;
+
+        processed++;
+        trueCounts[itemIndex]++;
+        document.getElementById('es-processed').innerText = processed;
+        animateIncoming(item);
+        clearActive();
+
+        if (bucket.id === null) {
+          buckets[bucketIndex] = { id: itemIndex, plus: 1, minus: 0 };
+          message = `Bucket ${bucketIndex} was empty: inserted ${item.symbol} with V+ = 1.`;
+        } else if (bucket.id === itemIndex) {
+          bucket.plus++;
+          message = `Bucket ${bucketIndex}: matched ${item.symbol}; incremented V+ to ${bucket.plus}.`;
+        } else {
+          bucket.minus++;
+          if (bucket.minus > lambda * bucket.plus) {
+            const evictedItem = shapes[bucket.id];
+            addToCms(bucket.id, bucket.plus);
+            buckets[bucketIndex] = { id: itemIndex, plus: 1, minus: 0 };
+            message = `Bucket ${bucketIndex}: V- exceeded λV+; sent ${evictedItem.symbol} (count ${bucket.plus}) to CMS and elected ${item.symbol}.`;
+          } else {
+            message = `Bucket ${bucketIndex}: mismatch; V- = ${bucket.minus}, threshold λV+ = ${lambda * bucket.plus}. Kept ${shapes[bucket.id].symbol}.`;
+          }
+        }
+
+        document.getElementById(`es-bucket-${bucketIndex}`).classList.add('es-active');
+        document.getElementById('es-status').innerText = message;
+        updateUI();
+        window.esUpdateQuery();
+      };
+
+      window.esUpdateQuery = function() {
+        const itemIndex = Number(document.getElementById('es-query-select').value);
+        const item = shapes[itemIndex];
+        const cmsEstimate = Math.min(...item.h.map((column, row) => cms[row][column]));
+        const bucket = buckets[item.beta];
+        const heavyEstimate = bucket.id === itemIndex ? bucket.plus : 0;
+        const estimate = cmsEstimate + heavyEstimate;
+        document.getElementById('es-query-result').innerText = `True: ${trueCounts[itemIndex]} | CMS: ${cmsEstimate} + Heavy: ${heavyEstimate} = Estimate: ${estimate}`;
+      };
+
+      window.esPlay = function() {
+        window.esPause();
+        timer = setInterval(window.esProcessNext, 1100);
+      };
+
+      window.esPause = function() {
+        if (timer) clearInterval(timer);
+        timer = null;
+      };
+
+      window.esStep = function() {
+        window.esPause();
+        window.esProcessNext();
+      };
+
+      window.esReset = function() {
+        window.esPause();
+        buckets = [{ id: null, plus: 0, minus: 0 }, { id: null, plus: 0, minus: 0 }];
+        cms = Array.from({ length: d }, () => Array(w).fill(0));
+        trueCounts = Array(shapes.length).fill(0);
+        processed = 0;
+        document.getElementById('es-processed').innerText = '0';
+        document.getElementById('es-status').innerText = 'Status: Reset complete.';
+        document.getElementById('es-stream-box').querySelectorAll('.es-stream-item').forEach(element => element.remove());
+        const prompt = document.getElementById('es-stream-prompt');
+        if (prompt) prompt.style.display = 'block';
+        clearActive();
+        updateUI();
+        window.esUpdateQuery();
+      };
+
+      updateUI();
+      window.esUpdateQuery();
+    })();
+  </script>
+</section>
+
+
+
+      <section>
+        <h2>Questions and assumptions</h2>
+  <ul>
+    <li>How should the eviction threshold \(\lambda\) be chosen?  </li><br>
+       <li>What is the error in the count?</li><br>
+    <li>What should be the fraction of memory allocated to the Heavy block i.e. what is \(\frac{m_1}{m_1+d \cdot w}\)?   </li>
+ 
+  </ul>
+  <br>
+  
+  <div class="fragment">
+    <p>We will answer these questions in the limiting regime as <strong>\(t \to \infty\)</strong>.</p>
+  <strong>Assumptions</strong>
+  <br><br>
+  <ul>
+    <li>The random variables $(R_t)_{t=1}^{\tau}$ are i.i.d. such that $\mathbb{P}(R_t = i) = p_i$, and $p_i>0$.</li>
+    <br>
+    <li>For any $\ell\in [d]$, $(\beta(i))_{i\in \mathcal{I}}$ and $\left( h_{\ell}(i)\right)_{i\in \mathcal{I}}$ are i.i.d. uniform random variables in $[m_1]$ and $[m_2]$ respectively.</li>
+  </ul>
+  </div>
+</section>
+
+<!-- <section>
+  <h2>Simple Random Walk on \(\mathbb{Z}\)</h2>
+  <svg id="integer-random-walk" viewBox="0 0 960 300" role="img" aria-label="An animated stick figure taking random forward and backward steps along the integers" style="display: block; width: 82%; max-height: 250px; height: auto; margin: 0 auto;">
+    <defs>
+      <marker id="rw-forward-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#50fa7b"></path>
+      </marker>
+      <marker id="rw-backward-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#8be9fd"></path>
+      </marker>
+    </defs>
+    <g id="integer-walk-track"></g>
+  </svg>
+
+      <p>At each step, the walker moves to a neighboring integer:</p>
+      <p style="color: #50fa7b;"><strong style="color: #50fa7b;">Green top arrow:</strong> move one step right with probability \(p\).</p>
+      <p style="color: #8be9fd;"><strong style="color: #8be9fd;">Blue bottom arrow:</strong> move one step left with probability \(q=1-p\).</p>
+      <h3>When does the walker return to their starting state \(0\) again and again? When is it <strong>recurrent</strong>?</h3>
+      <p class="fragment data-fragment-index=1"><strong>Recurrent:</strong>  \(p=q=\frac{1}{2}\).</p>
+      <p class="fragment data-fragment-index=1"><strong>Transient:</strong> when \(p\ne q\), the walk is biased and may eventually move away without returning to \(0\).</p>
+</section> -->
+
+<!-- Slide: Heavy Guardian / Heavy-Light Bucket Update Logic -->
+<section style="font-family: system-ui, -apple-system, sans-serif; color: #f8f8f2; padding: 20px; box-sizing: border-box; text-align: left;">
+
+  <h2 style="font-size: 1.3em; color: #f8f8f2; margin: 0 0 20px 0; text-align: center;">
+    Elastic Sketch algorithm (revisited)
+    <br>
+  </h2><br>
+<div style="display: flex; align-items: flex-start; gap: 20px;">
+  <div class="col" style="flex: 0 0 28%; padding: 0; font-size: 0.78em;">
+    <br>
+<br>
+<br>
+
+    <strong>Heavy block</strong>:
+    <ul>
+      <li>\(m_1\) buckets</li>
+      <li>Hash function: \(\beta:\mathcal{I}\to [m_1]\)</li>
+      <li>Eviction threshold: \(\lambda\)</li>
+      <br>
+      <li> Consider some bucket $b$ </li>
+      <!-- <li>Let <span style="color: #e8fd8b;">\(M_b = (S_b, \lambda V_b^+ - V_b^-)\)</span></li> -->
+    </ul>
+    <br><br><br>
+  </div>
+  <div class="col" data-id="heavy-update-diagram" style="flex: 1; min-width: 0; padding: 0; font-size: 0.78em;">
+<!-- Top Row: Incoming Item -> Bucket Table -> Conditional Branching -->
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 24px;">
+
+    <!-- 1. Incoming Item -->
+    <div style="text-align: center; flex: 0 0 120px;">
+      <div style="font-size: 0.8em; font-weight: bold; margin-bottom: 8px; color: #f8f8f2;">Incoming item</div>
+      <div style="background: #1e1e2e; border: 2px solid #8be9fd; border-radius: 12px; padding: 12px 18px; display: inline-block;">
+        <span style="font-size: 1.5em; color: #f8f8f2; font-style: italic;">x</span>
+      </div>
+      <div style="font-size: 0.85em; color: #8be9fd; margin-top: 8px; font-weight: bold;">
+        \(b = \beta(x)\)
+      </div>
+    </div>
+
+    <!-- Arrow to Bucket -->
+    <div style="font-size: 1.8em; color: #bd93f9;">➔</div>
+
+    <!-- 2. Bucket S_b Card -->
+    <div style="flex: 1; max-width: 320px; background: #1e1e2e; border: 2px solid #8be9fd; border-radius: 10px; padding: 10px; text-align: center;">
+      <div style="font-size: 1.1em; color: #8be9fd; font-weight: bold; margin-bottom: 6px;">\(S_b\)</div>
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.8em; background: #282a36; border-radius: 6px; overflow: hidden;">
+        <thead>
+          <tr style="background: #0044cc; color: #ffffff;">
+            <th style="padding: 6px; border: 1px solid #44475a; width: 40%;">\(S_b\)</th>
+            <th style="padding: 6px; border: 1px solid #44475a; width: 30%;">\(V_b^+\)</th>
+            <th style="padding: 6px; border: 1px solid #44475a; width: 30%;">\(V_b^-\)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding: 8px 4px; font-size: 0.72em; color: #f8f8f2; border: 1px solid #44475a; line-height: 1.2;">
+              id of the currently elected item
+            </td>
+            <td style="border: 1px solid #44475a;"></td>
+            <td style="border: 1px solid #44475a;"></td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="font-size: 0.75em; color: #8be9fd; margin-top: 6px; font-weight: bold;">
+        Bucket contents: \(id, V_b^+, V_b^-\)
+      </div>
+    </div>
+
+    <!-- Split Arrows -->
+    <div style="display: flex; flex-direction: column; justify-content: space-around; height: 110px; font-size: 1.4em;">
+      <span style="color: #50fa7b; transform: rotate(-20deg);">➔</span>
+      <span style="color: #ff5555; transform: rotate(20deg);">➔</span>
+    </div>
+
+    <!-- 3. Right Branch Cases -->
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 12px;">
+      <!-- Case 1: Green -->
+      <div style="background: #1b382b; border: 2px solid #50fa7b; border-radius: 10px; padding: 8px 12px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+          <span style="background: #50fa7b; color: #1e1e2e; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.75em;">1</span>
+          <span style="font-size: 0.85em; font-weight: bold; color: #50fa7b;">If \(x = id\)</span>
+        </div>
+        <div style="background: #282a36; border: 1px solid #50fa7b; border-radius: 6px; padding: 6px; text-align: center; font-size: 0.85em; color: #f8f8f2;">
+          \(V_b^+ \leftarrow V_b^+ + 1\)
+        </div>
+      </div>
+
+      <!-- Case 2: Red -->
+      <div style="background: #3a1c22; border: 2px solid #ff5555; border-radius: 10px; padding: 8px 12px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+          <span style="background: #ff5555; color: #ffffff; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.75em;">2</span>
+          <span style="font-size: 0.85em; font-weight: bold; color: #ff5555;">If \(x \neq id\)</span>
+        </div>
+        <div style="background: #282a36; border: 1px solid #ff5555; border-radius: 6px; padding: 6px; text-align: center; font-size: 0.85em; color: #f8f8f2;">
+          \(V_b^- \leftarrow V_b^- + 1\)
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <!-- Bottom Row: Comparison & Light Block Eviction -->
+  <div style="display: flex; align-items: stretch; justify-content: center; gap: 20px; position: relative;">
+
+    <!-- Left: Compare Box -->
+    <div style="flex: 0 1 58%; max-width: 58%; background: #1e1e2e; border: 2px solid #8be9fd; border-radius: 10px; padding: 5px 5px;">
+      <div style="font-size: 0.9em; font-weight: bold; color: #8be9fd; text-align: center; margin-bottom: 10px; border-bottom: 1px solid #44475a; padding-bottom: 6px;">
+        Compare \(V_b^-\) with \(\lambda V_b^+\)
+      </div>
+      <div style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; font-size: 0.82em;">
+        <span style="background: #118833; color: #ffffff; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold;">✓</span>
+        <span style="color: #50fa7b; font-weight: bold;">If \(V_b^- \le \lambda V_b^+\):</span>
+        <span style="color: #f8f8f2;">keep current \(id\)</span>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; font-size: 0.82em;">
+        <span style="background: #cc2222; color: #ffffff; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold;">✕</span>
+        <span style="color: #ff5555; font-weight: bold;">If \(V_b^- > \lambda V_b^+\):</span>
+        <span style="color: #f8f8f2;">\(x\) replaces current \(id\)</span>
+      </div>
+    </div>
+
+    <!-- Curved Arrow Connector (SVG) -->
+    <div style="flex: 0 0 60px; display: flex; align-items: flex-end; justify-content: center;">
+      <svg width="60" height="60" viewBox="0 0 60 60">
+        <path d="M 4 43 Q 32 42 54 23" fill="none" stroke="#eaf1fb" stroke-width="3" marker-end="url(#arrowhead)"/>
+        <defs>
+          <marker id="arrowhead" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#eaf1fb"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+
+    <!-- Right: Light Block Box -->
+    <div style="flex: 0 0 auto; align-self: center; background: #eaf1fb; border: 2px solid #4768b8; border-radius: 2px; padding: 8px 12px; display: flex; align-items: center; justify-content: center; text-align: center;">
+      <div style="font-size: 0.6em; font-weight: bold; color: #212155; line-height: 1.4;">
+        \((S_b, V_b^+)\) sent to<br>Light Block
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+</section>
+
+
+<section>
+  <h2>Heavy Block Bucket Dynamics</h2>
+
+  <div style="font-size: 0.85em;">
+    <p><strong>State Definition:</strong> Let <span style="color: #e8fd8b;">$X_b(t) = (S_b(t), V_b^+(t), V_b^-(t))$</span> be the state vector of bucket $b$ at step $t$, with eviction threshold metric <span style="color: #70bd18;">$U_b(t) = \lambda V_b^+(t) - V_b^-(t)$</span>.</p>
+  </div>
+
+  <div style="font-size: 0.75em; margin-top: 10px;">
+    \[
+    X_b(t) = 
+    \begin{cases} 
+      (R_t, V_b^+(t-1) + 1, V_b^-(t-1)), & \text{if } S_b(t-1) \in \{-1, R_t\} \quad \text{(Hit / Init)} \\[6pt]
+      (S_b(t-1), V_b^+(t-1), V_b^-(t-1) + 1), & \text{if } S_b(t-1) \notin \{-1, R_t\} \land U_b(t-1) > 0 \quad \text{(Vote -)} \\[6pt]
+      (R_t, 1, 0), & \text{if } S_b(t-1) \notin \{-1, R_t\} \land U_b(t-1) = 0 \quad \text{(Eviction)}
+    \end{cases}
+    \]
+  </div>
+<br>
+  <div>
+    <strong style="color: #f1fa8c;"> Some observations</strong>
+    <ol style="margin-top: 5px; margin-bottom: 5px;">
+      <li class="fragment"><strong> $\{X_b(t)\}$</strong> is a Discrete-Time Markov Chain (DTMC).</li>
+      <li class="fragment"> At any time, either $V_b^+(t)$ or $V_b^-(t)$ increases by $1$ i.e., <span style="color: #70bd18;">$U_b(t)$</span> increases by $\lambda$ or decreases by $1$.</li>
+      <li class="fragment"><span style="color: #e8fd8b;">\(M_b = (S_b, \lambda V_b^+ - V_b^-)\)</span> is also a Markov chain.
+</li>
+    </ol>
+  </div>
+</section>
+
+
+
+
+<!-- Slide: Markov Chain M_b Dynamics -->
+<section style="font-family: system-ui, -apple-system, sans-serif; color: #f8f8f2; padding: 20px; box-sizing: border-box; text-align: center;">
+
+  <h2 style="font-size: 1.3em; color: #f8f8f2; margin: 0 0 10px 0;">
+    Markov Chain \(M_b\) Dynamics 
+  </h2>
+
+  <!-- Transition Legend -->
+  <div style="display: flex; justify-content: center; gap: 20px; font-size: 0.75em; margin-bottom: 12px; background: #1e1e2e; padding: 8px 16px; border-radius: 8px; border: 1px solid #44475a; width: fit-content; margin-left: auto; margin-right: auto;">
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <span style="display: inline-block; width: 24px; height: 3px; background: #8be9fd;"></span>
+      <span>Increase by \(\lambda\) (Same Row)</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <span style="display: inline-block; width: 24px; height: 3px; background: #ff5555;"></span>
+      <span>Decrease by \(1\)</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <span style="display: inline-block; width: 24px; height: 3px; border-top: 3px dashed #ffb86c;"></span>
+      <span>Increase by \(\lambda\) (Change Row)</span>
+    </div>
+  </div>
+
+  <span style="color: #e8fd8b;">\(M_b = (S_b, \lambda V_b^+ - V_b^-)\)</span>
+
+  <!-- SVG Markov Chain Diagram -->
+  <div style="width: 100%; max-width: 900px; margin: 0 auto;">
+    <svg viewBox="0 0 880 380" width="100%" height="auto" style="overflow: visible;">
+        <style>
+          text[fill="#8be9fd"], text[fill="#ff5555"], text[fill="#ffb86c"] { font-size: 18px !important; }
+          text[fill="#f8f8f2"] { font-size: 16px !important; }
+          text[fill="#6272a4"] { font-size: 26px !important; }
+          tspan { font-size: 12px !important; }
+        </style>
+      <defs>
+        <!-- Arrowhead Markers -->
+        <marker id="arrow-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#8be9fd"/>
+        </marker>
+        <marker id="arrow-red" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#ff5555"/>
+        </marker>
+        <marker id="arrow-brown" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#ffb86c"/>
+        </marker>
+      </defs>
+
+      <!-- TRANSITIONS -->
+
+      <!-- Row 1: incsame (blue) -->
+      <!-- (1,0) -> (1,λ) -->
+      <path d="M 98 100 Q 270 20 442 100" fill="none" stroke="#8be9fd" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+      <text x="270" y="42" fill="#8be9fd" font-size="14" font-weight="bold" text-anchor="middle">p₁</text>
+
+      <!-- (1,1) -> (1,λ+1) -->
+      <path d="M 238 102 Q 410 40 582 102" fill="none" stroke="#8be9fd" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+      <text x="410" y="58" fill="#8be9fd" font-size="14" font-weight="bold" text-anchor="middle">p₁</text>
+
+      <!-- Row 1: dec (red) -->
+      <!-- (1,λ+1) -> (1,λ) -->
+      <path d="M 582 110 Q 530 80 478 110" fill="none" stroke="#ff5555" stroke-width="2.5" marker-end="url(#arrow-red)"/>
+      <text x="530" y="86" fill="#ff5555" font-size="14" font-weight="bold" text-anchor="middle">p₂</text>
+
+      <!-- (1,1) -> (1,0) -->
+      <path d="M 198 130 Q 150 160 102 130" fill="none" stroke="#ff5555" stroke-width="2.5" marker-end="url(#arrow-red)"/>
+      <text x="150" y="162" fill="#ff5555" font-size="14" font-weight="bold" text-anchor="middle">p₂</text>
+
+      <!-- Row 2: incsame (blue) -->
+      <!-- (2,0) -> (2,λ) -->
+      <path d="M 98 280 Q 270 360 442 280" fill="none" stroke="#8be9fd" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+      <text x="270" y="342" fill="#8be9fd" font-size="14" font-weight="bold" text-anchor="middle">p₂</text>
+
+      <!-- (2,1) -> (2,λ+1) -->
+      <path d="M 238 278 Q 410 340 582 278" fill="none" stroke="#8be9fd" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+      <text x="410" y="324" fill="#8be9fd" font-size="14" font-weight="bold" text-anchor="middle">p₂</text>
+
+      <!-- Row 2: dec (red) -->
+      <!-- (2,λ+1) -> (2,λ) -->
+      <path d="M 582 270 Q 530 300 478 270" fill="none" stroke="#ff5555" stroke-width="2.5" marker-end="url(#arrow-red)"/>
+      <text x="530" y="296" fill="#ff5555" font-size="14" font-weight="bold" text-anchor="middle">p₁</text>
+
+      <!-- (2,1) -> (2,0) -->
+      <path d="M 198 250 Q 150 220 102 250" fill="none" stroke="#ff5555" stroke-width="2.5" marker-end="url(#arrow-red)"/>
+      <text x="150" y="222" fill="#ff5555" font-size="14" font-weight="bold" text-anchor="middle">p₁</text>
+
+      <!-- Inter-row transitions: incother (brown dashed) -->
+      <!-- (2,0) -> (1,λ) -->
+      <path d="M 98 262 Q 250 160 440 128" fill="none" stroke="#ffb86c" stroke-width="2.5" stroke-dasharray="6,4" marker-end="url(#arrow-brown)"/>
+      <text x="280" y="172" fill="#ffb86c" font-size="14" font-weight="bold" text-anchor="middle">p₁</text>
+
+      <!-- (1,0) -> (2,λ) -->
+      <path d="M 98 118 Q 250 220 440 252" fill="none" stroke="#ffb86c" stroke-width="2.5" stroke-dasharray="6,4" marker-end="url(#arrow-brown)"/>
+      <text x="280" y="222" fill="#ffb86c" font-size="14" font-weight="bold" text-anchor="middle">p₂</text>
+
+      <!-- STATE NODES -->
+
+      <!-- Row 1 Nodes (y = 120) -->
+      <!-- Node (1,0) -->
+      <circle cx="80" cy="120" r="26" fill="#1e1e2e" stroke="#bd93f9" stroke-width="2.5"/>
+      <text x="80" y="125" fill="#f8f8f2" font-size="13" font-weight="bold" text-anchor="middle">(1,0)</text>
+
+      <!-- Node (1,1) -->
+      <circle cx="220" cy="120" r="26" fill="#1e1e2e" stroke="#bd93f9" stroke-width="2.5"/>
+      <text x="220" y="125" fill="#f8f8f2" font-size="13" font-weight="bold" text-anchor="middle">(1,1)</text>
+
+      <!-- Ellipsis 1 -->
+      <text x="340" y="125" fill="#6272a4" font-size="20" font-weight="bold" text-anchor="middle">…</text>
+
+      <!-- Node (1,λ) -->
+      <circle cx="460" cy="120" r="26" fill="#1e1e2e" stroke="#bd93f9" stroke-width="2.5"/>
+      <text x="460" y="125" fill="#f8f8f2" font-size="13" font-weight="bold" text-anchor="middle">(1,λ)</text>
+
+      <!-- Node (1,λ+1) -->
+      <circle cx="600" cy="120" r="26" fill="#1e1e2e" stroke="#bd93f9" stroke-width="2.5"/>
+      <text x="600" y="125" fill="#f8f8f2" font-size="12" font-weight="bold" text-anchor="middle">(1,λ+1)</text>
+
+      <!-- Ellipsis 2 -->
+      <text x="720" y="125" fill="#6272a4" font-size="20" font-weight="bold" text-anchor="middle">…</text>
+
+      <!-- Row 2 Nodes (y = 270) -->
+      <!-- Node (2,0) -->
+      <circle cx="80" cy="270" r="26" fill="#1e1e2e" stroke="#bd93f9" stroke-width="2.5"/>
+      <text x="80" y="275" fill="#f8f8f2" font-size="13" font-weight="bold" text-anchor="middle">(2,0)</text>
+
+      <!-- Node (2,1) -->
+      <circle cx="220" cy="270" r="26" fill="#1e1e2e" stroke="#bd93f9" stroke-width="2.5"/>
+      <text x="220" y="275" fill="#f8f8f2" font-size="13" font-weight="bold" text-anchor="middle">(2,1)</text>
+
+      <!-- Ellipsis 3 -->
+      <text x="340" y="275" fill="#6272a4" font-size="20" font-weight="bold" text-anchor="middle">…</text>
+
+      <!-- Node (2,λ) -->
+      <circle cx="460" cy="270" r="26" fill="#1e1e2e" stroke="#bd93f9" stroke-width="2.5"/>
+      <text x="460" y="275" fill="#f8f8f2" font-size="13" font-weight="bold" text-anchor="middle">(2,λ)</text>
+
+      <!-- Node (2,λ+1) -->
+      <circle cx="600" cy="270" r="26" fill="#1e1e2e" stroke="#bd93f9" stroke-width="2.5"/>
+      <text x="600" y="275" fill="#f8f8f2" font-size="12" font-weight="bold" text-anchor="middle">(2,λ+1)</text>
+
+      <!-- Ellipsis 4 -->
+      <text x="720" y="275" fill="#6272a4" font-size="20" font-weight="bold" text-anchor="middle">…</text>
+    </svg>
+  </div>
+
+  <!-- Figure Caption -->
+  <div style="font-size: 0.72em; color: #e2e47b; margin-top: 10px; font-style: italic;">
+    Illustration of the Markov chain \(M_b\) when \(n_b=2\).
+  </div>
+</section>
+
+<section data-auto-animate data-auto-animate-duration="1.5s">
+  <h2>Reduced Markov chain</h2>
+    <!-- SVG Markov Chain Diagram -->
+  <div style="width: 100%; max-width: 900px; margin: 0 auto;">
+    <svg viewBox="0 0 880 380" width="100%" height="auto" style="overflow: visible;">
+      <style>
+        text[fill="#8be9fd"], text[fill="#ff5555"], text[fill="#ffb86c"] { font-size: 18px !important; }
+        text[fill="#f8f8f2"] { font-size: 16px !important; }
+        text[fill="#6272a4"] { font-size: 26px !important; }
+        tspan { font-size: 12px !important; }
+      </style>
+      <defs>
+        <!-- Arrowhead Markers -->
+        <marker id="arrow-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#8be9fd"/>
+        </marker>
+        <marker id="arrow-red" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#ff5555"/>
+        </marker>
+        <marker id="arrow-brown" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#ffb86c"/>
+        </marker>
+      </defs>
+
+      <!-- TRANSITIONS -->
+
+      <!-- Shared zero state transitions -->
+      <!-- 0_b -> (1,λ) -->
+      <path d="M 105 178 C 190 165 360 150 442 100" fill="none" stroke="#8be9fd" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+      <text x="275" y="137" fill="#8be9fd" font-size="14" font-weight="bold" text-anchor="middle">p₁</text>
+
+      <!-- 0_b -> (2,λ) -->
+      <path d="M 105 212 C 190 225 360 240 442 280" fill="none" stroke="#8be9fd" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+      <text x="275" y="252" fill="#8be9fd" font-size="14" font-weight="bold" text-anchor="middle">p₂</text>
+
+      <!-- (1,1) -> (1,λ+1) -->
+      <path d="M 238 102 Q 410 40 582 102" fill="none" stroke="#8be9fd" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+      <text x="410" y="58" fill="#8be9fd" font-size="14" font-weight="bold" text-anchor="middle">p₁</text>
+
+      <!-- Row 1: dec (red) -->
+      <!-- (1,λ+1) -> (1,λ) -->
+      <path d="M 582 110 Q 530 80 478 110" fill="none" stroke="#ff5555" stroke-width="2.5" marker-end="url(#arrow-red)"/>
+      <text x="530" y="86" fill="#ff5555" font-size="14" font-weight="bold" text-anchor="middle">p₂</text>
+
+      <!-- (1,1) -> shared zero state -->
+      <path d="M 198 134 Q 112 96 56 176" fill="none" stroke="#ff5555" stroke-width="2.5" marker-end="url(#arrow-red)"/>
+      <text x="126" y="119" fill="#ff5555" font-size="14" font-weight="bold" text-anchor="middle">p<tspan baseline-shift="sub" font-size="10">b</tspan> − p<tspan baseline-shift="sub" font-size="10">1</tspan></text>
+
+      <!-- Row 2: incsame (blue) -->
+      <!-- (2,1) -> (2,λ+1) -->
+      <path d="M 238 278 Q 410 340 582 278" fill="none" stroke="#8be9fd" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+      <text x="410" y="324" fill="#8be9fd" font-size="14" font-weight="bold" text-anchor="middle">p₂</text>
+
+      <!-- Row 2: dec (red) -->
+      <!-- (2,λ+1) -> (2,λ) -->
+      <path d="M 582 270 Q 530 300 478 270" fill="none" stroke="#ff5555" stroke-width="2.5" marker-end="url(#arrow-red)"/>
+      <text x="530" y="296" fill="#ff5555" font-size="14" font-weight="bold" text-anchor="middle">p₁</text>
+
+      <!-- (2,1) -> shared zero state -->
+      <path d="M 198 254 Q 112 292 56 214" fill="none" stroke="#ff5555" stroke-width="2.5" marker-end="url(#arrow-red)"/>
+      <text x="126" y="273" fill="#ff5555" font-size="14" font-weight="bold" text-anchor="middle">p<tspan baseline-shift="sub" font-size="10">b</tspan> − p<tspan baseline-shift="sub" font-size="10">2</tspan></text>
+
+      <!-- STATE NODES -->
+
+      <!-- Row 1 Nodes (y = 120) -->
+      <!-- Node (1,1) -->
+      <circle cx="220" cy="120" r="26" fill="#1e1e2e" stroke="#bd93f9" stroke-width="2.5"/>
+      <text x="220" y="125" fill="#f8f8f2" font-size="13" font-weight="bold" text-anchor="middle">(1,1)</text>
+
+      <!-- Ellipsis 1 -->
+      <text x="340" y="125" fill="#6272a4" font-size="20" font-weight="bold" text-anchor="middle">…</text>
+
+      <!-- Node (1,λ) -->
+      <circle cx="460" cy="120" r="26" fill="#1e1e2e" stroke="#bd93f9" stroke-width="2.5"/>
+      <text x="460" y="125" fill="#f8f8f2" font-size="13" font-weight="bold" text-anchor="middle">(1,λ)</text>
+
+      <!-- Node (1,λ+1) -->
+      <circle cx="600" cy="120" r="26" fill="#1e1e2e" stroke="#bd93f9" stroke-width="2.5"/>
+      <text x="600" y="125" fill="#f8f8f2" font-size="12" font-weight="bold" text-anchor="middle">(1,λ+1)</text>
+
+      <!-- Ellipsis 2 -->
+      <text x="720" y="125" fill="#6272a4" font-size="20" font-weight="bold" text-anchor="middle">…</text>
+
+      <!-- Shared zero state -->
+      <circle cx="80" cy="195" r="30" fill="#1e1e2e" stroke="#bd93f9" stroke-width="2.5"/>
+      <text x="80" y="200" fill="#f8f8f2" font-size="14" font-weight="bold" text-anchor="middle">0<tspan baseline-shift="sub" font-size="10">b</tspan></text>
+
+      <!-- Row 2 Nodes (y = 270) -->
+
+      <!-- Node (2,1) -->
+      <circle cx="220" cy="270" r="26" fill="#1e1e2e" stroke="#bd93f9" stroke-width="2.5"/>
+      <text x="220" y="275" fill="#f8f8f2" font-size="13" font-weight="bold" text-anchor="middle">(2,1)</text>
+
+      <!-- Ellipsis 3 -->
+      <text x="340" y="275" fill="#6272a4" font-size="20" font-weight="bold" text-anchor="middle">…</text>
+
+      <!-- Node (2,λ) -->
+      <circle cx="460" cy="270" r="26" fill="#1e1e2e" stroke="#bd93f9" stroke-width="2.5"/>
+      <text x="460" y="275" fill="#f8f8f2" font-size="13" font-weight="bold" text-anchor="middle">(2,λ)</text>
+
+      <!-- Node (2,λ+1) -->
+      <circle cx="600" cy="270" r="26" fill="#1e1e2e" stroke="#bd93f9" stroke-width="2.5"/>
+      <text x="600" y="275" fill="#f8f8f2" font-size="12" font-weight="bold" text-anchor="middle">(2,λ+1)</text>
+
+      <!-- Ellipsis 4 -->
+      <text x="720" y="275" fill="#6272a4" font-size="20" font-weight="bold" text-anchor="middle">…</text>
+    </svg>
+  </div>
+  <p style="margin: 4px 0 0; text-align: center; font-size: 0.72em;">
+    \(0_b \xrightarrow{p_1} (1,\lambda)\), \(0_b \xrightarrow{p_2} (2,\lambda)\);
+    \((1,1) \xrightarrow{p_b-p_1} 0_b\), \((2,1) \xrightarrow{p_b-p_2} 0_b\),
+    where \(p_b=p_1+p_2\).
+  </p>
+  <br>
+  <strong>Eviction parameter dependence</strong>
+            <ul>
+              <li><em>\(\lambda\)-large:</em> Heavy Part never evicts (acts like a fixed cache). Can lock onto sub-optimal items, blocking true elephants from entry.</li>
+              <li><em>\(\lambda\)-small:</em> Heavy Part constantly evicts (collapses to pure Count-Min Sketch). Can evict valid elephants.</li>
+            </ul>
+</section>
+
+<section data-auto-animate data-auto-animate-duration="1.5s">
+  <h2>Reduced Markov chain</h2>
+    <!-- SVG Markov Chain Diagram -->
+  <div style="width: 100%; max-width: 900px; margin: 0 auto;">
+    <svg viewBox="0 0 880 380" width="100%" height="auto" style="overflow: visible;">
+      <defs>
+        <!-- Arrowhead Markers -->
+        <marker id="arrow-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#8be9fd"/>
+        </marker>
+        <marker id="arrow-red" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#ff5555"/>
+        </marker>
+        <marker id="arrow-brown" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#ffb86c"/>
+        </marker>
+      </defs>
+
+      <!-- TRANSITIONS -->
+
+      <!-- Shared zero state transitions -->
+      <!-- 0_b -> (1,λ) -->
+      <path d="M 105 178 C 190 165 360 150 442 100" fill="none" stroke="#8be9fd" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+      <text x="275" y="137" fill="#8be9fd" font-size="14" font-weight="bold" text-anchor="middle">p₁</text>
+
+      <!-- 0_b -> (2,λ) -->
+      <path d="M 105 212 C 190 225 360 240 442 280" fill="none" stroke="#8be9fd" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+      <text x="275" y="252" fill="#8be9fd" font-size="14" font-weight="bold" text-anchor="middle">p₂</text>
+
+      <!-- (1,1) -> (1,λ+1) -->
+      <path d="M 238 102 Q 410 40 582 102" fill="none" stroke="#8be9fd" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+      <text x="410" y="58" fill="#8be9fd" font-size="14" font-weight="bold" text-anchor="middle">p₁</text>
+
+      <!-- Row 1: dec (red) -->
+      <!-- (1,λ+1) -> (1,λ) -->
+      <path d="M 582 110 Q 530 80 478 110" fill="none" stroke="#ff5555" stroke-width="2.5" marker-end="url(#arrow-red)"/>
+      <text x="530" y="86" fill="#ff5555" font-size="14" font-weight="bold" text-anchor="middle">p₂</text>
+
+      <!-- (1,1) -> shared zero state -->
+      <path d="M 198 134 Q 112 96 56 176" fill="none" stroke="#ff5555" stroke-width="2.5" marker-end="url(#arrow-red)"/>
+      <text x="126" y="119" fill="#ff5555" font-size="14" font-weight="bold" text-anchor="middle">p<tspan baseline-shift="sub" font-size="10">b</tspan> − p<tspan baseline-shift="sub" font-size="10">1</tspan></text>
+
+      <!-- Row 2: incsame (blue) -->
+      <!-- (2,1) -> (2,λ+1) -->
+      <path d="M 238 278 Q 410 340 582 278" fill="none" stroke="#8be9fd" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+      <text x="410" y="324" fill="#8be9fd" font-size="14" font-weight="bold" text-anchor="middle">p₂</text>
+
+      <!-- Row 2: dec (red) -->
+      <!-- (2,λ+1) -> (2,λ) -->
+      <path d="M 582 270 Q 530 300 478 270" fill="none" stroke="#ff5555" stroke-width="2.5" marker-end="url(#arrow-red)"/>
+      <text x="530" y="296" fill="#ff5555" font-size="14" font-weight="bold" text-anchor="middle">p₁</text>
+
+      <!-- (2,1) -> shared zero state -->
+      <path d="M 198 254 Q 112 292 56 214" fill="none" stroke="#ff5555" stroke-width="2.5" marker-end="url(#arrow-red)"/>
+      <text x="126" y="273" fill="#ff5555" font-size="14" font-weight="bold" text-anchor="middle">p<tspan baseline-shift="sub" font-size="10">b</tspan> − p<tspan baseline-shift="sub" font-size="10">2</tspan></text>
+
+      <!-- STATE NODES -->
+
+      <!-- Row 1 Nodes (y = 120) -->
+      <!-- Node (1,1) -->
+      <circle cx="220" cy="120" r="26" fill="#1e1e2e" stroke="#bd93f9" stroke-width="2.5"/>
+      <text x="220" y="125" fill="#f8f8f2" font-size="13" font-weight="bold" text-anchor="middle">(1,1)</text>
+
+      <!-- Ellipsis 1 -->
+      <text x="340" y="125" fill="#6272a4" font-size="20" font-weight="bold" text-anchor="middle">…</text>
+
+      <!-- Node (1,λ) -->
+      <circle cx="460" cy="120" r="26" fill="#1e1e2e" stroke="#bd93f9" stroke-width="2.5"/>
+      <text x="460" y="125" fill="#f8f8f2" font-size="13" font-weight="bold" text-anchor="middle">(1,λ)</text>
+
+      <!-- Node (1,λ+1) -->
+      <circle cx="600" cy="120" r="26" fill="#1e1e2e" stroke="#bd93f9" stroke-width="2.5"/>
+      <text x="600" y="125" fill="#f8f8f2" font-size="12" font-weight="bold" text-anchor="middle">(1,λ+1)</text>
+
+      <!-- Ellipsis 2 -->
+      <text x="720" y="125" fill="#6272a4" font-size="20" font-weight="bold" text-anchor="middle">…</text>
+
+      <!-- Shared zero state -->
+      <circle cx="80" cy="195" r="30" fill="#1e1e2e" stroke="#bd93f9" stroke-width="2.5"/>
+      <text x="80" y="200" fill="#f8f8f2" font-size="14" font-weight="bold" text-anchor="middle">0<tspan baseline-shift="sub" font-size="10">b</tspan></text>
+
+      <!-- Row 2 Nodes (y = 270) -->
+
+      <!-- Node (2,1) -->
+      <circle cx="220" cy="270" r="26" fill="#1e1e2e" stroke="#bd93f9" stroke-width="2.5"/>
+      <text x="220" y="275" fill="#f8f8f2" font-size="13" font-weight="bold" text-anchor="middle">(2,1)</text>
+
+      <!-- Ellipsis 3 -->
+      <text x="340" y="275" fill="#6272a4" font-size="20" font-weight="bold" text-anchor="middle">…</text>
+
+      <!-- Node (2,λ) -->
+      <circle cx="460" cy="270" r="26" fill="#1e1e2e" stroke="#bd93f9" stroke-width="2.5"/>
+      <text x="460" y="275" fill="#f8f8f2" font-size="13" font-weight="bold" text-anchor="middle">(2,λ)</text>
+
+      <!-- Node (2,λ+1) -->
+      <circle cx="600" cy="270" r="26" fill="#1e1e2e" stroke="#bd93f9" stroke-width="2.5"/>
+      <text x="600" y="275" fill="#f8f8f2" font-size="12" font-weight="bold" text-anchor="middle">(2,λ+1)</text>
+
+      <!-- Ellipsis 4 -->
+      <text x="720" y="275" fill="#6272a4" font-size="20" font-weight="bold" text-anchor="middle">…</text>
+    </svg>
+  </div>
+  <strong>Eviction parameter dependence</strong>
+            <ul>
+              <li>\(\lambda \to \infty\): Heavy Part never evicts (acts like a fixed cache).</li>
+              <li>\(\lambda \to 0\): Heavy Part constantly evicts (collapses to pure Count-Min Sketch).</li>
+            </ul>
+  <p><strong>Forward drift:</strong> \(\lambda p_i\) <span>&emsp;&emsp;</span><strong>Backward drift:</strong> \(p_b-p_i\)</p>
+  <p>Choose <span style="color: #eccb39;">\(\lambda > \frac{p_b}{p_1}-1\)</span> </p>
+</section>
+
+
+<!-- Slide 10: Recurrence vs. Transience -->
+<section>
+  <h2>Election Dynamics: Recurrence vs. Transience</h2>
+  <p>Branch threshold parameter: \(\lambda_b^{(i)} = \frac{p_b - p_i}{p_i}\)</p>
+  <div class="flex-container" style="margin-top: 15px;">
+    <div class="col box">
+      <h4>Recurrent (\(\lambda < \lambda_b^{(1)}\))</h4>
+      <p>Markov chain is recurrent. Elected item switches infinitely often.</p>
+    </div>
+    <div class="col box">
+      <h4>Transient (\(\lambda > \lambda_b^{(1)}\))</h4>
+      <p>Most popular item becomes <strong>permanently elected</strong> with absorption probability \(a_{i,\beta}(\lambda)\).</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Counting error</h2><br>
+  <ul>
+    <li><strong>Stochastic dominance:</strong> For any \(i\in \mathcal{I}\),
+      \[|\hat{N}_i(t)-N_i(t)| \preccurlyeq \min_{\ell\in[d]} Y_{\ell,U_\ell}(t)\]</li>
+    <li>Thus, it suffices to bound <span style="color: #eccb39;">\( \overline{Err}_0 := \lim_{t\to \infty} \frac{1}{t} \min_{\ell\in[d]} Y_{\ell,U_\ell}(t)\)</span>.</li><br>
+    <li>Expected counting error is stochastically dominated by <span style="color: #71e27a;">\[\mathbb{E} \big[\overline{Err}_0 \big] = \frac{1}{m_2} \big(1-\mathbb{E}_\beta[g_\beta(\lambda)]\big)\]</span><br>
+    where  <span style="color: #f8be7c;"> \(g_{\beta}(\lambda)=\sum_{b\in \text{absorbing buckets}} \sum_{i\in \mathcal{I}_b} a_{i,\beta}(\lambda)\, p_i\),</span></li><br>
+    <li><span style="color: #f8be7c;">$g_\beta(\lambda)$:</span> Asymptotic traffic fraction absorbed by Heavy Part under mapping $\beta$.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Finding Optimal $\lambda^*$ and Memory Split $(m_1, m_2)$</h2>
+
+  <div style="font-size: 0.8em; text-align: left;">
+    <p><strong>1. Joint Optimization Formulation</strong></p>
+    <p style="margin-top: -5px;">Given total memory budget $m = m_1 + m_2$, minimize expected counting error:</p>
+    \[
+    \min_{\lambda, \, m_1, m_2} \,\, \frac{1}{m_2} \left( 1 - \mathbb{E}_\beta[g_\beta(\lambda)] \right) \approx \min_{\lambda, \, m_1} \frac{1}{m - m_1} \left( 1 - \frac{1}{n_{\text{samp}}}\sum_{k=1}^{n_{\text{samp}}} g_{\beta_k}(\lambda) \right)
+    \]
+    <p style="font-size: 0.85em; color: #888; margin-top: -5px;">$g_\beta(\lambda)$: Asymptotic traffic fraction absorbed by Heavy Part buckets under mapping $\beta$.</p>
+
+    <div style="display: flex; gap: 15px; margin-top: 10px; font-size: 0.9em;">
+      <div style="flex: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; background: rgba(255,255,255,0.03);">
+        <strong>Memory Split ($m_1$ vs $m_2$)</strong>
+        <ul style="margin: 5px 0 0 15px; padding: 0;">
+          <li><strong>$m_1 \uparrow$:</strong> Captures more elephant flows $\implies g_\beta(\lambda) \uparrow$, shrinking unabsorbed error $(1 - g_\beta)$.</li>
+          <li><strong>$m_2 \downarrow$:</strong> Fewer Count-Min counters $\implies$ inflates error scaling multiplier $\frac{1}{m_2}$.</li>
+        </ul>
+      </div>
+
+      <!-- <div style="flex: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; background: rgba(255,255,255,0.03);">
+        <strong>Eviction Threshold Tuning ($\lambda$)</strong>
+        <ul style="margin: 5px 0 0 15px; padding: 0;">
+          <li><strong>Too Small ($\lambda < \lambda_b^{(1)}$):</strong> Recurrent chain; Heavy Part thrashes and evicts valid elephants.</li>
+          <li><strong>Too Large ($\lambda \gg \lambda^*$):</strong> Locks onto sub-optimal items, blocking true elephants from entry.</li>
+        </ul>
+      </div> -->
+    </div>
+
+    <div style="margin-top: 15px;">
+      <p><strong>2. Efficient Pruned Candidate Search in $O(n_{\mathcal{I}})$ Time</strong></p>
+      <p style="margin-top: -5px;">Prune candidate search space for each $m_1$ to transience boundaries:</p>
+      \[
+      \Lambda(m_1) = \bigcup_{k=1}^{n_{\text{samp}}} \left\{ \left\lfloor \lambda_b^{(1)}(\beta_k) \right\rfloor + 1 \right\}
+      \]
+      <p style="font-size: 0.85em; margin-top: -5px;">Evaluating $\approx 20\text{--}30$ discrete candidate points yields near-optimal $(\lambda^*, m_1^*)$ in linear time.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+<h2>Numerical results (error)</h2>
+  <div aria-label="Plots of g lambda for three parameter values" style="display: flex; justify-content: center; align-items: center; gap: 10px; width: 94%; margin: 20px auto 0;">
+    <img src="./Images/elastic_sketch/g_lambda_08.svg" alt="Plot g lambda 08" style="display: block; flex: 1; min-width: 0; height: 240px; object-fit: contain; background: #fff;">
+    <img src="./Images/elastic_sketch/g_lambda_10.svg" alt="Plot g lambda 10" style="display: block; flex: 1; min-width: 0; height: 240px; object-fit: contain; background: #fff;">
+    <img src="./Images/elastic_sketch/g_lambda_12.svg" alt="Plot g lambda 12" style="display: block; flex: 1; min-width: 0; height: 240px; object-fit: contain; background: #fff;">
+  </div>
+  <ul>
+    <li>\(g_{\beta}(\lambda) \approx \frac{1}{\tau} \sum_{b} V_b^+(\tau)\) with \(𝑛_I = 10^4, 𝜏 = 5 \times 10^5, \text{iterations} = 100, 𝑚_1 = 200\)
+    </li><br>
+    <li>Computing \(g_{\beta}(\lambda)\) takes much less time than simulating </li>
+  </ul>
+</section>
+
+<section>
+<h2>Numerical results (memory split)</h2>
+<iframe src="./Images/elastic_sketch/gamma_star_vs_param_alpha_rho.pdf#toolbar=0&amp;navpanes=0&amp;scrollbar=0&amp;view=FitH" title="Gamma star versus parameter by alpha and rho" style="display: block; width: 40%; height: 210px; margin: 0 auto; border: 0; background: #fff;"></iframe>
+  <div aria-label="Plots of g lambda for three parameter values" style="display: flex; justify-content: center; align-items: center; gap: 10px; width: 94%; margin: 20px auto 0;">
+    <iframe src="./Images/elastic_sketch/ARE_alpha08.pdf#toolbar=0&amp;navpanes=0&amp;scrollbar=0&amp;view=FitH" title="Numerical results for alpha 0.8" style="display: block; flex: 1; min-width: 0; height: 200px; border: 0; background: #fff;"></iframe>
+    <iframe src="./Images/elastic_sketch/ARE_alpha1.pdf#toolbar=0&amp;navpanes=0&amp;scrollbar=0&amp;view=FitH" title="Numerical results for alpha 1" style="display: block; flex: 1; min-width: 0; height: 200px; border: 0; background: #fff;"></iframe>
+    <iframe src="./Images/elastic_sketch/ARE_alpha12.pdf#toolbar=0&amp;navpanes=0&amp;scrollbar=0&amp;view=FitH" title="Numerical results for alpha 1.2" style="display: block; flex: 1; min-width: 0; height: 200px; border: 0; background: #fff;"></iframe>
+  </div>
+  <ul>
+    <li> Recall that \(p_i \propto \frac{1}{i^{\alpha}}\)
+    <li><em>\(\gamma^* = \frac{\rho m_1}{\rho m_1+m_2}\)</em>, \(\rho\) is the cost of Heavy Part counter relative to CMS counter.
+    </li>
+    <li>\(\rho = 2, m = 1000, m_1= 200\) </li>
+  </ul>
+</section>
+
+
+
+
+<!-- Slide 8: Addressing Memory Trade-Off Drawbacks -->
+<section>
+<h2>How Elastic Sketch Solves Drawbacks</h2>
+<ul style="margin-top: 15px;">
+    <li><strong> Tighter Error Guarantees:</strong> Light Part counting error is bounded by \(\epsilon \|N_L\|_1\) (residual stream), where \(\|N_L\|_1 \ll \|N\|_1\).</li> <br>       
+    <li><strong> Zero Error for Elephants:</strong> Elephant flows in the Heavy Part with no evictions have zero estimation error.</li>
+    <br>
+    <li><strong> Compact Memory:</strong> Light Part counters can shrink to 8 bits because huge elephant counts are filtered out.</li>
+</ul>
+</section>
+
+<section>
+  <div  style="text-align: center;">
+						<br><br>
+						In a stream, we want item counts<br>
+						Leave deterministic, error mounts;<br>
+						Go stochastic,<br>
+						Make it elastic,<br>
+						Error discounts and save on memory amounts.<br>
+						<br><br>
+						<span style="color: #8ee6a7;">Thank you !!</span>
+                        <br><br>
+				</div>
+  <img src="./Images/elastic_sketch/qr-code.png" alt="QR code" style="display: block; margin: 0 auto; max-width: 180px; max-height: 180px; width: 100%; height: auto; object-fit: contain;">
+</section>
+
+    </div>
+  </div>
+
+  <!-- Reveal.js & MathJax Plugin CDNs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.js"></script>
+<script src="../plugin/math/math.js"></script>
+<script>
+    Reveal.initialize({
+      controls: true,
+      progress: true,
+      center: true,
+      hash: true,
+      transition: 'slide',
+      mathjax2: {
+        config: 'TeX-AMS_HTML-full',
+        TeX: {
+          Macros: {
+            R: '\\mathbb{R}',
+            set: [ '\\left\\{#1 \\; ; \\; #2\\right\\}', 2 ]
+          }
+        }
+      },
+      plugins: [ RevealMath.MathJax2 ]
+    });
+
+    Reveal.on('ready', startTitleStream);
+
+    const integerWalkSlide = document.querySelector('#integer-random-walk')?.closest('section');
+    const integerWalkTrack = document.getElementById('integer-walk-track');
+    const integerWalkStatus = document.getElementById('integer-walk-status');
+    let integerWalkFrame = null;
+    let integerWalkTimer = null;
+    let integerWalkStepResolve = null;
+    let integerWalkWaitResolve = null;
+    let integerWalkActive = false;
+    let integerWalkGeneration = 0;
+    let integerWalkState = 0;
+    let integerWalkOrigin = -4;
+    const integerWalkCenter = 4;
+    const integerWalkSpacing = 100;
+    const integerWalkNodeY = 160;
+    const integerWalkSvgNS = 'http://www.w3.org/2000/svg';
+
+    function createWalkSvgElement(name, attributes = {}) {
+      const element = document.createElementNS(integerWalkSvgNS, name);
+      for (const [key, value] of Object.entries(attributes)) {
+        element.setAttribute(key, value);
+      }
+      return element;
+    }
+
+    function buildIntegerWalkTrack() {
+      if (!integerWalkTrack) return;
+      integerWalkTrack.replaceChildren();
+
+      for (let index = 0; index < 8; index++) {
+        const startX = 80 + index * integerWalkSpacing;
+        const endX = startX + integerWalkSpacing;
+        const middleX = (startX + endX) / 2;
+        integerWalkTrack.append(
+          createWalkSvgElement('path', {
+            d: `M ${startX + 32} ${integerWalkNodeY} Q ${middleX} 68 ${endX - 32} ${integerWalkNodeY}`,
+            fill: 'none',
+            stroke: '#50fa7b',
+            'stroke-width': '3',
+            'marker-end': 'url(#rw-forward-arrow)'
+          }),
+          createWalkSvgElement('path', {
+            d: `M ${endX - 32} ${integerWalkNodeY} Q ${middleX} 252 ${startX + 32} ${integerWalkNodeY}`,
+            fill: 'none',
+            stroke: '#8be9fd',
+            'stroke-width': '3',
+            'marker-end': 'url(#rw-backward-arrow)'
+          })
+        );
+      }
+
+      for (let index = 0; index < 9; index++) {
+        const x = 80 + index * integerWalkSpacing;
+        integerWalkTrack.append(
+          createWalkSvgElement('circle', {
+            cx: x,
+            cy: integerWalkNodeY,
+            r: 33,
+            fill: '#282a36',
+            stroke: '#bd93f9',
+            'stroke-width': '3'
+          }),
+          createWalkSvgElement('text', {
+            x,
+            y: integerWalkNodeY + 9,
+            'text-anchor': 'middle',
+            fill: '#f8f8f2',
+            'font-size': '26',
+            'font-weight': 'bold',
+            'data-walk-state-index': index
+          })
+        );
+      }
+
+      const walker = createWalkSvgElement('g', {
+        id: 'integer-walk-figure',
+        fill: 'none',
+        stroke: '#f1fa8c',
+        'stroke-width': '4',
+        'stroke-linecap': 'round'
+      });
+      walker.append(
+        createWalkSvgElement('circle', { cx: '0', cy: '-27', r: '7', fill: '#f1fa8c', stroke: 'none' }),
+        createWalkSvgElement('path', { d: 'M 0 -19 L 0 -7 M -10 -14 L 10 -14 M 0 -7 L -8 0 M 0 -7 L 8 0' })
+      );
+      integerWalkTrack.append(walker);
+      updateIntegerWalkLabels();
+      setIntegerWalkFigure(80 + integerWalkCenter * integerWalkSpacing, integerWalkNodeY - 33);
+    }
+
+    function updateIntegerWalkLabels() {
+      if (!integerWalkTrack) return;
+      integerWalkTrack.querySelectorAll('[data-walk-state-index]').forEach(label => {
+        const index = Number(label.getAttribute('data-walk-state-index'));
+        label.textContent = integerWalkOrigin + index;
+      });
+    }
+
+    function setIntegerWalkFigure(x, y) {
+      const figure = document.getElementById('integer-walk-figure');
+      if (figure) figure.setAttribute('transform', `translate(${x} ${y})`);
+    }
+
+    function waitForIntegerWalk(ms) {
+      return new Promise(resolve => {
+        integerWalkWaitResolve = resolve;
+        integerWalkTimer = setTimeout(() => {
+          integerWalkTimer = null;
+          integerWalkWaitResolve = null;
+          resolve();
+        }, ms);
+      });
+    }
+
+    async function runIntegerWalk(generation) {
+      const direction = Math.random() < 0.5 ? -1 : 1;
+      const startX = 80 + integerWalkCenter * integerWalkSpacing;
+      const endX = startX + direction * integerWalkSpacing;
+      const startY = integerWalkNodeY - 33;
+      const controlY = direction > 0 ? 53 : 267;
+      const duration = 700;
+      const startTime = performance.now();
+
+      await new Promise(resolve => {
+        integerWalkStepResolve = resolve;
+        const animateStep = now => {
+          if (!integerWalkActive || generation !== integerWalkGeneration) {
+            integerWalkStepResolve = null;
+            return resolve();
+          }
+          const progress = Math.min((now - startTime) / duration, 1);
+          const inverse = 1 - progress;
+          const x = inverse * inverse * startX + 2 * inverse * progress * ((startX + endX) / 2) + progress * progress * endX;
+          const y = inverse * inverse * startY + 2 * inverse * progress * controlY + progress * progress * startY;
+          setIntegerWalkFigure(x, y);
+          if (progress < 1) {
+            integerWalkFrame = requestAnimationFrame(animateStep);
+          } else {
+            integerWalkStepResolve = null;
+            resolve();
+          }
+        };
+        integerWalkFrame = requestAnimationFrame(animateStep);
+      });
+      if (!integerWalkActive || generation !== integerWalkGeneration) return;
+
+      integerWalkState += direction;
+      if (integerWalkStatus) integerWalkStatus.textContent = `Current state: ${integerWalkState}`;
+      await waitForIntegerWalk(180);
+      if (!integerWalkActive || generation !== integerWalkGeneration || !integerWalkTrack) return;
+
+      integerWalkTrack.style.transition = 'transform 320ms ease-in-out';
+      integerWalkTrack.setAttribute('transform', `translate(${-direction * integerWalkSpacing} 0)`);
+      await waitForIntegerWalk(340);
+      if (!integerWalkActive || generation !== integerWalkGeneration) return;
+
+      integerWalkOrigin = integerWalkState - integerWalkCenter;
+      integerWalkTrack.style.transition = 'none';
+      integerWalkTrack.removeAttribute('transform');
+      buildIntegerWalkTrack();
+      await waitForIntegerWalk(180);
+      if (integerWalkActive && generation === integerWalkGeneration) runIntegerWalk(generation);
+    }
+
+    function stopIntegerWalk() {
+      integerWalkActive = false;
+      integerWalkGeneration++;
+      if (integerWalkFrame !== null) cancelAnimationFrame(integerWalkFrame);
+      if (integerWalkStepResolve) integerWalkStepResolve();
+      if (integerWalkTimer !== null) clearTimeout(integerWalkTimer);
+      if (integerWalkWaitResolve) integerWalkWaitResolve();
+      integerWalkFrame = null;
+      integerWalkTimer = null;
+      integerWalkStepResolve = null;
+      integerWalkWaitResolve = null;
+      if (integerWalkTrack) {
+        integerWalkTrack.style.transition = 'none';
+        integerWalkTrack.removeAttribute('transform');
+      }
+      setIntegerWalkFigure(80 + integerWalkCenter * integerWalkSpacing, integerWalkNodeY - 33);
+    }
+
+    function syncIntegerWalkToSlide() {
+      if (!integerWalkSlide) return;
+      if (Reveal.getCurrentSlide() === integerWalkSlide) {
+        if (!integerWalkActive) {
+          integerWalkActive = true;
+          integerWalkGeneration++;
+          runIntegerWalk(integerWalkGeneration);
+        }
+      } else {
+        stopIntegerWalk();
+      }
+    }
+
+    buildIntegerWalkTrack();
+    Reveal.on('ready', syncIntegerWalkToSlide);
+    Reveal.on('slidechanged', syncIntegerWalkToSlide);
+
+    // JavaScript Interactive Stream Exercise Handler
+    let streamInterval = null;
+    let titleStreamInterval = null;
+    let counts = {}; // Tally tracker
+
+    const shapeTypes = [
+      { name: 'Red Circle', symbol: '●', color: '#ff5555' },
+      { name: 'Blue Square', symbol: '■', color: '#8be9fd' },
+      { name: 'Green Triangle', symbol: '▲', color: '#50fa7b' },
+      { name: 'Yellow Star', symbol: '★', color: '#f1fa8c' },
+      { name: 'Pink Diamond', symbol: '◆', color: '#ff79c6' }
+    ];
+
+    function startStream(numTypes) {
+      stopStream();
+      counts = {}; // Reset counts
+      
+      const instruction = document.getElementById('exercise-stream-instruction');
+      if (instruction) instruction.style.display = 'none';
+      
+      document.getElementById('count-result').innerText = ''; // Clear result
+      
+      // Keep Reveal Count button disabled while stream is active
+      const revealBtn = document.getElementById('reveal-btn');
+      revealBtn.disabled = true;
+      revealBtn.style.opacity = '0.5';
+      revealBtn.style.cursor = 'not-allowed';
+
+      const box = document.getElementById('exercise-stream-box');
+      
+      streamInterval = setInterval(() => {
+        const activeShapes = shapeTypes.slice(0, numTypes);
+        const chosen = activeShapes[Math.floor(Math.random() * activeShapes.length)];
+        
+        // Increment tally
+        counts[chosen.symbol] = (counts[chosen.symbol] || 0) + 1;
+
+        addStreamItem(box, chosen);
+      }, 380);
+    }
+
+    function startTitleStream() {
+      if (titleStreamInterval) return;
+      const box = document.getElementById('title-stream-box');
+      titleStreamInterval = setInterval(() => {
+        const chosen = shapeTypes[Math.floor(Math.random() * shapeTypes.length)];
+        addStreamItem(box, chosen);
+      }, 380);
+    }
+
+    function addStreamItem(box, shape) {
+      const elem = document.createElement('span');
+      elem.innerText = shape.symbol;
+      elem.style.position = 'absolute';
+      elem.style.right = '-40px';
+      elem.style.color = shape.color;
+      elem.style.fontSize = '42px';
+      elem.style.transition = 'all 2.2s linear';
+      box.appendChild(elem);
+
+      setTimeout(() => { elem.style.right = '105%'; }, 30);
+      setTimeout(() => {
+        if (elem.parentNode === box) box.removeChild(elem);
+      }, 2300);
+    }
+
+    function stopStream() {
+      if (streamInterval) clearInterval(streamInterval);
+      streamInterval = null;
+      
+      // Enable Reveal Count button after stopping
+      const revealBtn = document.getElementById('reveal-btn');
+      revealBtn.disabled = false;
+      revealBtn.style.opacity = '1.0';
+      revealBtn.style.cursor = 'pointer';
+    }
+
+    function revealCount() {
+      const resultDiv = document.getElementById('count-result');
+      if (Object.keys(counts).length === 0) {
+        resultDiv.innerText = "No items generated yet!";
+        return;
+      }
+      
+      // Format total count and breakdown by shape
+      let total = 0;
+      let breakdown = [];
+      for (const [symbol, count] of Object.entries(counts)) {
+        total += count;
+        breakdown.push(`${symbol} : ${count}`);
+      }
+      
+      resultDiv.innerText = `Total Count: ${total}  ( ${breakdown.join(' | ')} )`;
+    }
+  </script>
+</body>
+</html>
